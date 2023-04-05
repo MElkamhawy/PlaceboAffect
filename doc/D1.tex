@@ -1,0 +1,100 @@
+%
+% File acl2020.tex
+%
+%% Based on the style files for ACL 2020, which were
+%% Based on the style files for ACL 2018, NAACL 2018/19, which were
+%% Based on the style files for ACL-2015, with some improvements
+%%  taken from the NAACL-2016 style
+%% Based on the style files for ACL-2014, which were, in turn,
+%% based on ACL-2013, ACL-2012, ACL-2011, ACL-2010, ACL-IJCNLP-2009,
+%% EACL-2009, IJCNLP-2008...
+%% Based on the style files for EACL 2006 by 
+%%e.agirre@ehu.es or Sergi.Balari@uab.es
+%% and that of ACL 08 by Joakim Nivre and Noah Smith
+
+\documentclass[11pt,a4paper]{article}
+\usepackage[hyperref]{acl2020}
+\usepackage{times}
+\usepackage{latexsym}
+\usepackage{lipsum} % for dummy text only
+\renewcommand{\UrlFont}{\ttfamily\small}
+
+% This is not strictly necessary, and may be commented out,
+% but it will improve the layout of the manuscript,
+% and will typically save some space.
+\usepackage{microtype}
+\pagestyle{plain}
+\pagenumbering{arabic}
+\aclfinalcopy % Uncomment this line for the final submission
+%\def\aclpaperid{***} %  Enter the acl Paper ID here
+
+%\setlength\titlebox{5cm}
+% You can expand the titlebox if you need extra space
+% to show all the authors. Please do not make the titlebox
+% smaller than 5cm (the original size); we will check this
+% in the camera-ready version and ask you to change it back.
+
+\newcommand\BibTeX{B\textsc{ib}\TeX}
+
+\title{Deliverable \#1 Report}
+\thispagestyle{plain}
+\author{Mohamed Elkamhawy \\
+  \small University of Washington \\
+  \texttt{mohame@uw.edu} \\\And
+  Karl Haraldsson \\
+  \small University of Washington \\
+  \texttt{kharalds@uw.edu} \\\And
+  Alex Maris \\
+  \small University of Washington \\
+  \texttt{alexmar@uw.edu} \\\And
+  Nora Miao \\
+  \small University of Washington \\
+  \texttt{norah98@uw.edu} \\
+  }
+
+\date{}
+
+\begin{document}
+\maketitle
+\begin{abstract}
+This document is an initial project report for team PlaceboAffect. This section, along with all others aside from Task Description below, will be completed per later deliverables. 
+\end{abstract}
+
+\section{Introduction}
+
+This section provides a brief overview of the paper. 
+
+\section{Task Description}
+    
+The chosen primary task is the detection of hate speech in tweets, where the hate speech is against either women or immigrants, as described in SemEval-2019 Task 5 \citep{basile-etal-2019-semeval}. Specifically, it is a binary classification task targeted at determining attitude–here whether a given tweet contains hate speech or not. The genre for this task is tweets and its modality is text. The target of this task is aspect-specific, and the language is English for the primary task. The adaptation task will be hate speech identification in Spanish tweets, also described in \citet{basile-etal-2019-semeval}. The only difference between the primary task and the adaptation task is the language used, while all the other dimensions remain unchanged.
+
+The data for the shared task was collected from July to September 2018 for the immigrant-targeted tweets \citep{basile-etal-2019-semeval}. The data for the women-targeted tweets was collected from July to November 2017 \citep{fersini2018overview}. The English language dataset contains 13,000 tweets, 9,000 of which are the training set, 1,000 are dev, and 3,000 are test. Of the 13,000 tweets, 7,530 are annotated for the negative class, and 5,470 are annotated for the positive class. The Spanish language dataset that will be used for the adaptation task contains 6,600 tweets, 4,500 of which are the training set, 500 are dev, and 1,600 are test. Of the 6,600 tweets, 3,861 are annotated for the negative class, and 2,739 are annotated for the positive class. The annotations were collected using the \textit{Figure Eight} (F8) platform, where each tweet was annotated by at least three contributors, and then a relative majority label was assigned. Expert annotators were also utilized, such that the final label of a given tweet was determined by the majority label of the F8 annotation and two independent expert annotators \citep{basile-etal-2019-semeval}. The evaluation is calculated by using accuracy, precision, recall, and macro-averaged F1-scores to maintain class-size independence since the hate speech and non-hate speech class sizes are relatively balanced \citep{basile-etal-2019-semeval}.
+
+The dataset can be requested using \href{http://hatespeech.di.unito.it/hateval.html}{this form}, and the shared task is detailed on \href{https://competitions.codalab.org/competitions/19935#learn_the_details-overview}{this page} as well as in \citet{basile-etal-2019-semeval}.
+
+
+
+\section{System Overview}
+\lipsum[1-1]
+
+\section{Approach}
+\lipsum[1-1]
+
+\section{Results}
+\lipsum[1-1]
+
+\section{Discussion}
+\lipsum[1-1]
+
+\section{Ethical Considerations}
+\lipsum[1-1]
+
+\section{Conclusion}
+\lipsum[1-1]
+
+\nocite{*}
+\bibliographystyle{acl_natbib}
+\bibliography{references}
+
+
+\end{document}
