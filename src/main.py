@@ -15,9 +15,12 @@ from argparse import ArgumentParser
 
 
 def main(training_data_file, development_data_file, test_data_file, predictions_file, results_file):
-    data = preprocess.Data.from_csv(training_data_file, development_data_file, test_data_file)
-    print(data.train_raw.shape)
-    data.process()
+    train = preprocess.Data.from_csv(training_data_file, name='train')
+    print(train.raw_df.shape)
+    train.process(text_name='text', target_name='HS')
+    print(train.label.shape)
+    print(train.text.shape)
+
 
 
 

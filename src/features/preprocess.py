@@ -1,53 +1,57 @@
+import re
+import string
 import pandas as pd
+import numpy as np
 
-from sklearn.feature_extraction.text import TfidfVectorizer
 
 class Data:
-    def __init__(self, train_raw, dev_raw, test_raw):
-        self.train_raw = train_raw
-        self.dev_raw = dev_raw
-        self.test_raw = test_raw
-        self.y_train = None
-        self.X_train = None
-        self.y_dev = None
-        self.X_dev = None
-        self.y_test = None
-        self.X_test = None
+    def __init__(self, raw_df, name):
+        self.raw_df = raw_df
+        self.name = name
+        self.text = None
+        self.label = None
 
     @classmethod
-    def from_csv(cls, train_path, dev_path, test_path):
-        return cls(pd.read_csv(train_path), pd.read_csv(dev_path), pd.read_csv(test_path))
+    def from_csv(cls, train_path, name):
+        return cls(pd.read_csv(train_path), name)
 
-    def process(self):
-        # Set X Arrays
-        self.y_train = self.train_raw['HS']
-        self.y_dev = self.dev_raw['HS']
-        self.y_test = self.test_raw['HS']
+    def process(self, text_name, target_name):
+        # TODO Document
+        # Convert target into array of labels
+        self.label = self._process_target(target_name)
 
-        # Create TF-IDF vectorizer
-        self.X_train = self._vectorize(set='train', df=self.train_raw, text_column='text')
-        self.X_dev = self._vectorize(set='dev', df=self.dev_raw, text_column='text')
-        self.X_test = self._vectorize(set='test', df=self.test_raw, text_column='text')
-        print("proces completed")
+        # Preprocess text data
+        self.text = self._process_text(text_name)
 
-    def _vectorize(self, set, df, text_column):
+    def _process_target(self, target_name):
+        return self.raw_df[target_name]
+
+    def _process_text(self, text_name):
+        # TODO Document
+        text_clean = np.array([self._clean_text(element) for element in self.raw_df[text_name]])
+        text_vector = self._vectorize_text(text_clean)
+        text_embeddings = self._apply_embeddings(text_vector)
+        return text_embeddings
+
+    def _clean_text(self, text):
         """
-
-        :param set: a string indicating which split of the data the function is being applied to
-        :param df: the hateval dataframe read in from a csv
-        :param text_column: the name of the column with text to be processed
-        :return: tfidf sparse matrix or numpy array
+        Clean up the description: lowercase, remove brackets, remove various characters
+        TODO: Determine how much of this is actually necessary.
+            This is pretty standard preprocessing, but not necessarily how we want to treat tweets.
         """
+        text = str(text)
+        text = text.lower()
+        text = re.sub(r'/', ' ', text)
+        text = re.sub(r'\[.*?\]', '', text)
+        text = re.sub(r'[%s]' % re.escape(string.punctuation), '', text)
+        text = re.sub(r"\s+", ' ', text).strip()
+        return text
 
-        vectorizer = TfidfVectorizer()
-        print(set)
-        print(df[text_column])
-        if set == 'train':
-            tfidf = vectorizer.fit_transform(df[text_column])
-        else:
-            tfidf = vectorizer.transform(df[text_column])
+    def _vectorize_text(self, text):
+        # TODO Build this out. Should be num instances x vocabulary shape numpy array.
+        return text
 
-        return tfidf
-
-
-
+    def _apply_embeddings(self, text):
+        # TODO Apply pretrained embeddings
+        # Word2Vec? Glove?
+        return text
