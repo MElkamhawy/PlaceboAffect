@@ -8,7 +8,7 @@ TBD
 import os
 import pandas as pd
 
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report
 
 from src.features import preprocess
 from src.modeling import classifier
@@ -26,10 +26,11 @@ def main(training_data_file, development_data_file, test_data_file, predictions_
     data_dev.process(text_name='text', target_name='HS', vectorizor=data_train.vectorizer)
 
     # Train Model
-    # parameter_grid = {'C': [0.1, 1, 10], 'kernel': ['linear', 'rbf', 'sigmoid']}
-    parameter_grid = {'C': [0.1], 'kernel': ['linear']}
+    parameter_grid = {'C': [0.1, 1, 10], 'kernel': ['linear', 'rbf', 'sigmoid']}
+    # parameter_grid = {'C': [0.1], 'kernel': ['linear']}
     clf = classifier.Model(parameter_grid)
-    clf.fit(data_train.text, data_train.label, cv_folds=3)
+    clf.fit(data_train.text, data_train.label, algorithm='SVM', cv_folds=3)
+    print(clf.model.best_estimator_)
 
     # Predict on Dev Set
     pred_labels = clf.predict(data_dev.text)
@@ -44,6 +45,7 @@ def main(training_data_file, development_data_file, test_data_file, predictions_
     print("Precision: {:.2f}".format(precision))
     print("Recall: {:.2f}".format(recall))
     print("F1-score: {:.2f}".format(f1))
+    print(classification_report(data_dev.label, pred_labels))
 
     # Output Predictions
 

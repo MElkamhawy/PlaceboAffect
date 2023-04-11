@@ -19,15 +19,9 @@ class Model:
     def from_file(cls, path):
         return cls(model=joblib.load(path))
 
-    def fit(self, text, label, cv_folds):
-        # Create SVM classifier
-        svm = SVC()
-
-        # Create GridSearchCV with 5-fold cross-validation
-        grid_search = GridSearchCV(svm, self.hyper_parameters, cv=cv_folds)
-        grid_search.fit(text, label)
-
-        self.model = grid_search
+    def fit(self, text, label, cv_folds, algorithm):
+        if algorithm == 'SVM':
+            self.model = self._fit_svm(text, label, cv_folds)
 
     def predict(self, text):
         # Get best hyperparameters and model
@@ -41,3 +35,15 @@ class Model:
     def save_model(self, path):
         joblib.dump(self.model, path)
 
+    def _fit_svm(self, text: np.ndarray, label: np.ndarray, cv_folds: int) -> SVC:
+        """
+        Fits an SVM classifier on the predictor variable set, text, with the target variable, label.
+        Returns an SVM model object.
+        """
+        svm = SVC()
+
+        # Create GridSearchCV with k-fold cross-validation
+        grid_search = GridSearchCV(svm, self.hyper_parameters, cv=cv_folds)
+        grid_search.fit(text, label)
+
+        return grid_search
