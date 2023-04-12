@@ -54,5 +54,5 @@ class Data:
     def process_features(self, text_name, vectorizer=None):
         # TODO Document
         text_tokenize = [self._tokenize(element) for element in df[text_name]]
-        text_vectors = self._vectorize_text(text_tokenize, vectorizor)
+        text_vectors = self._vectorize_text(text_tokenize, vectorizer)
         return text_vectors
