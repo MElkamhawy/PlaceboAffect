@@ -4,6 +4,8 @@ import pandas as pd
 import numpy as np
 from nltk.tokenize import TweetTokenizer
 from gensim.models import Word2Vec
+from empath import Empath
+lexicon = Empath()
 
 from sklearn.feature_extraction.text import CountVectorizer
 
@@ -15,6 +17,7 @@ class Data:
         self.vectorizer = None
         self.text = None
         self.label = None
+        self.empath = False
 
     @classmethod
     def from_csv(cls, train_path, name):
@@ -24,6 +27,11 @@ class Data:
         tweet_tokenizer = TweetTokenizer()
         tokens = tweet_tokenizer.tokenize(text)
         return tokens
+    
+    def _calculate_empath(self, text):
+        empath_dict = lexicon.analyze(text, normalize=True)
+        empath_values = np.array(list(empath_dict.values()))
+        return empath_values
         
     def _vectorize_text(self, text, vectorizer=None):
         # TODO Build this out. Should be num instances x vocabulary shape numpy array.d
@@ -51,8 +59,12 @@ class Data:
 
         return vectors
 
-    def process_features(self, text_name, vectorizer=None):
+    def process_features(self, text_name, vectorizer=None, empath=False):
         # TODO Document
         text_tokenize = [self._tokenize(element) for element in df[text_name]]
         text_vectors = self._vectorize_text(text_tokenize, vectorizer)
+        # if empath, apply empath to text
+        if empath:
+            empath_vectors = [self._calculate_empath(element) for element in df[text_name]]
+            text_vectors = np.concatenate((text_vectors, empath_vectors), axis=1)
         return text_vectors
