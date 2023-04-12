@@ -17,7 +17,6 @@ class Data:
         self.vectorizer = None
         self.text = None
         self.label = None
-        self.empath = False
 
     @classmethod
     def from_csv(cls, train_path, name):
