@@ -61,10 +61,10 @@ class Data:
 
     def process_features(self, text_name, vectorizer=None, empath=False):
         # TODO Document
-        text_tokenize = [self._tokenize(element) for element in df[text_name]]
+        text_tokenize = [self._tokenize(element) for element in self.raw_df[text_name]]
         text_vectors = self._vectorize_text(text_tokenize, vectorizer)
         # if empath, apply empath to text
         if empath:
-            empath_vectors = [self._calculate_empath(element) for element in df[text_name]]
+            empath_vectors = [self._calculate_empath(element) for element in self.raw_df[text_name]]
             text_vectors = np.concatenate((text_vectors, empath_vectors), axis=1)
         return text_vectors
