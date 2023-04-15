@@ -33,9 +33,6 @@ def main(
         empath,
         train
 ):
-    # get start time
-    start = time.time()
-    print('Started Data Preprocessing')
     # Load Data from CSV and store as preprocess.Data object
     data_train = preprocess.Data.from_csv(training_data_file, name="train")
     data_dev = preprocess.Data.from_csv(development_data_file, name="dev")
@@ -46,19 +43,13 @@ def main(
     data_dev.process(
         text_name="text", target_name="HS", vectorizer=data_train.vectorizer, empath=empath
     )
-    end = time.time()
-    print(f'Completed Data Preprocessing {end - start}')
 
     if train:
         # Train Model
-        print('Started Model Training')
         parameter_grid = {'C': [0.1, 1, 10], 'kernel': ['linear', 'rbf', 'sigmoid']}
         # parameter_grid = {"C": [0.1], "kernel": ["linear"]}
         clf = classifier.Model(parameter_grid)
         clf.fit(data_train.vector, data_train.label, cv_folds=5, algorithm='SVM')
-        end = time.time()
-        print(f'Completed Model Training {end - start}')
-        print(clf.model.best_estimator_)
 
         # Save Model
         clf.save_model(model_file)
@@ -66,10 +57,7 @@ def main(
         clf = classifier.Model.from_file(model_file)
 
     # Predict on Dev Set
-    print('Started Model Inference')
     pred_labels = clf.predict(data_dev.vector)
-    end = time.time()
-    print(f'Completed Model Inference {end - start}')
 
     # Output Predictions
     output_lines(list(pred_labels), predictions_file)
@@ -80,10 +68,10 @@ def main(
     recall = recall_score(data_dev.label, pred_labels, average="binary")
     f1 = f1_score(data_dev.label, pred_labels, average="binary")
 
-    print(f'accuracy = {accuracy}')
-    print(f'precision = {precision}')
-    print(f'recall = {recall}')
-    print(f'f1 = {f1}')
+    print(f'accuracy = {accuracy:.2f}')
+    print(f'precision = {precision:.2f}')
+    print(f'recall = {recall:.2f}')
+    print(f'f1 = {f1:.2f}')
 
     report = classification_report(data_dev.label, pred_labels)
     print(report)
@@ -92,9 +80,6 @@ def main(
     # TODO Mohamed to replace eval script provided by shared task
     with open(results_file, 'w') as f:
         f.write(report)
-
-    end = time.time()
-    print(f"total time: {end - start}")
 
 
 if __name__ == "__main__":
@@ -112,9 +97,9 @@ if __name__ == "__main__":
     training_data_file = "../data/train/en/hateval2019_en_train.csv"
     development_data_file = "../data/dev/en/hateval2019_en_dev.csv"
     test_data_file = "../data/test/en/hateval2019_en_test.csv"
-    predictions_file = "../outputs/pred_en_svm_no_empath.txt"
-    results_file = "../results/res_svm_no_empath.txt"
-    model_file = "../models/svm_no_empath.pkl"
+    predictions_file = "../outputs/pred_en_svm.txt"
+    results_file = "../results/res_en_svm.txt"
+    model_file = "../models/svm_en.pkl"
     empath = False
     train = True
 
