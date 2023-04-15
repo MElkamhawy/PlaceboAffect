@@ -59,7 +59,7 @@ def main(
         parameter_grid = {"C": [0.1, 1, 10], "kernel": ["linear", "rbf", "sigmoid"]}
         # parameter_grid = {"C": [0.1], "kernel": ["linear"]}
         clf = classifier.Model(parameter_grid)
-        clf.fit(data_train_vector, data_train.labels, cv_folds=5, algorithm="SVM")
+        clf.fit(data_train.vector, data_train.label, cv_folds=5, algorithm="SVM")
 
         # Save Model
         clf.save_model(model_file)

@@ -5,10 +5,11 @@ from nltk.corpus import stopwords
 from nltk.tokenize import TweetTokenizer
 from nltk.stem import WordNetLemmatizer
 
+
 class Data:
     def __init__(self, raw_df, name):
         self.raw_df = raw_df
-        self.name = name  
+        self.name = name
         self.texts = None
         self.labels = None
 
@@ -149,4 +150,3 @@ class Data:
         if clean_text == "":
             clean_text = str(original_text).lower()
         return clean_text
-    
