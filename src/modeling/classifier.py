@@ -9,11 +9,11 @@ from sklearn.svm import SVC
 
 
 class Model:
-    def __init__(self, hyper_parameters=None):
+    def __init__(self, hyper_parameters=None, model=None):
         self.hyper_parameters = hyper_parameters
+        self.model = model
         self.text = None
         self.label = None
-        self.model = None
 
     @classmethod
     def from_file(cls, path):
@@ -35,7 +35,6 @@ class Model:
     def save_model(self, path):
         joblib.dump(self.model, path)
 
-
     def _fit_svm(self, text: np.ndarray, label: np.ndarray, cv_folds: int) -> SVC:
         """
         Fits an SVM classifier on the predictor variable set, text, with the target variable, label.
@@ -48,4 +47,3 @@ class Model:
         grid_search.fit(text, label)
 
         return grid_search
-

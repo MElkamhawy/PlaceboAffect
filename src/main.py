@@ -22,6 +22,7 @@ def output_lines(lines, path):
         for line in lines:
             f.write(str(line) + '\n')
 
+
 def main(
         training_data_file,
         development_data_file,
@@ -48,29 +49,29 @@ def main(
     end = time.time()
     print(f'Completed Data Preprocessing {end - start}')
 
-    print('Started Model Training')
+    if train:
+        # Train Model
+        print('Started Model Training')
+        # parameter_grid = {'C': [0.1, 1, 10], 'kernel': ['linear', 'rbf', 'sigmoid']}
+        parameter_grid = {"C": [0.1], "kernel": ["linear"]}
+        clf = classifier.Model(parameter_grid)
+        clf.fit(data_train.vector, data_train.label, cv_folds=2, algorithm='SVM')  # changed from text to vector
+        end = time.time()
+        print(f'Completed Model Training {end - start}')
+        print(clf.model.best_estimator_)
 
-    # Train Model
-    # parameter_grid = {'C': [0.1, 1, 10], 'kernel': ['linear', 'rbf', 'sigmoid']}
-    parameter_grid = {"C": [0.1], "kernel": ["linear"]}
-    clf = classifier.Model(parameter_grid)
-    clf.fit(data_train.vector, data_train.label, cv_folds=2, algorithm='SVM') #changed from text to vector
-    end = time.time()
-    print(f'Completed Model Training {end - start}')
-    print(clf.model.best_estimator_)
-
-    # Save Model
-    clf.save_model(model_file)
-
+        # Save Model
+        clf.save_model(model_file)
+    else:
+        clf = classifier.Model.from_file(model_file)
 
     # Predict on Dev Set
     print('Started Model Inference')
-    pred_labels = clf.predict(data_dev.vector) #same
+    pred_labels = clf.predict(data_dev.vector)
     end = time.time()
     print(f'Completed Model Inference {end - start}')
-    print(list(pred_labels))
 
-    # # Output Predictions
+    # Output Predictions
     output_lines(list(pred_labels), predictions_file)
 
     # Evaluate classifier
@@ -84,12 +85,12 @@ def main(
     print("Recall: {:.2f}".format(recall))
     print("F1-score: {:.2f}".format(f1))
 
-
     # Output Evaluation Results
-
+    # TODO Mohamed to replace eval script provided by shared task
 
     end = time.time()
     print(f"total time: {end - start}")
+
 
 if __name__ == "__main__":
     """
@@ -106,11 +107,11 @@ if __name__ == "__main__":
     training_data_file = "../data/train/en/hateval2019_en_train.csv"
     development_data_file = "../data/dev/en/hateval2019_en_dev.csv"
     test_data_file = "../data/test/en/hateval2019_en_test.csv"
-    predictions_file = "../outputs/pred_en_svm_no_empath.txt"
+    predictions_file = "../outputs/pred_en_svm_no_empath_from_file_test.txt"
     results_file = "../outputs/res.txt"
     model_file = "../models/svm_no_empath.pkl"
     empath = False
-    train = True
+    train = False
     main(
         training_data_file=training_data_file,
         development_data_file=development_data_file,
