@@ -59,7 +59,7 @@ def main(
         parameter_grid = {"C": [0.1, 1, 10], "kernel": ["linear", "rbf", "sigmoid"]}
         # parameter_grid = {"C": [0.1], "kernel": ["linear"]}
         clf = classifier.Model(parameter_grid)
-        clf.fit(data_train.vector, data_train.label, cv_folds=5, algorithm="SVM")
+        clf.fit(data_train_vector, data_train.labels, cv_folds=5, algorithm="SVM")
 
         # Save Model
         clf.save_model(model_file)
@@ -73,10 +73,10 @@ def main(
     output_lines(list(pred_labels), predictions_file)
 
     # Evaluate classifier
-    accuracy = accuracy_score(data_dev.label, pred_labels)
-    precision = precision_score(data_dev.label, pred_labels, average="binary")
-    recall = recall_score(data_dev.label, pred_labels, average="binary")
-    f1 = f1_score(data_dev.label, pred_labels, average="binary")
+    accuracy = accuracy_score(data_dev.labels, pred_labels)
+    precision = precision_score(data_dev.labels, pred_labels, average="binary")
+    recall = recall_score(data_dev.labels, pred_labels, average="binary")
+    f1 = f1_score(data_dev.labels, pred_labels, average="binary")
 
     print(f"accuracy = {accuracy:.2f}")
     print(f"precision = {precision:.2f}")
