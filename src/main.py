@@ -9,7 +9,7 @@ import os
 import time
 import pandas as pd
 
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report
 
 from features import preprocess
 from modeling import classifier
@@ -52,10 +52,10 @@ def main(
     if train:
         # Train Model
         print('Started Model Training')
-        # parameter_grid = {'C': [0.1, 1, 10], 'kernel': ['linear', 'rbf', 'sigmoid']}
-        parameter_grid = {"C": [0.1], "kernel": ["linear"]}
+        parameter_grid = {'C': [0.1, 1, 10], 'kernel': ['linear', 'rbf', 'sigmoid']}
+        # parameter_grid = {"C": [0.1], "kernel": ["linear"]}
         clf = classifier.Model(parameter_grid)
-        clf.fit(data_train.vector, data_train.label, cv_folds=2, algorithm='SVM')  # changed from text to vector
+        clf.fit(data_train.vector, data_train.label, cv_folds=5, algorithm='SVM')
         end = time.time()
         print(f'Completed Model Training {end - start}')
         print(clf.model.best_estimator_)
@@ -80,13 +80,18 @@ def main(
     recall = recall_score(data_dev.label, pred_labels, average="binary")
     f1 = f1_score(data_dev.label, pred_labels, average="binary")
 
-    print("Accuracy: {:.2f}".format(accuracy))
-    print("Precision: {:.2f}".format(precision))
-    print("Recall: {:.2f}".format(recall))
-    print("F1-score: {:.2f}".format(f1))
+    print(f'accuracy = {accuracy}')
+    print(f'precision = {precision}')
+    print(f'recall = {recall}')
+    print(f'f1 = {f1}')
+
+    report = classification_report(data_dev.label, pred_labels)
+    print(report)
 
     # Output Evaluation Results
     # TODO Mohamed to replace eval script provided by shared task
+    with open(results_file, 'w') as f:
+        f.write(report)
 
     end = time.time()
     print(f"total time: {end - start}")
@@ -107,11 +112,12 @@ if __name__ == "__main__":
     training_data_file = "../data/train/en/hateval2019_en_train.csv"
     development_data_file = "../data/dev/en/hateval2019_en_dev.csv"
     test_data_file = "../data/test/en/hateval2019_en_test.csv"
-    predictions_file = "../outputs/pred_en_svm_no_empath_from_file_test.txt"
-    results_file = "../outputs/res.txt"
+    predictions_file = "../outputs/pred_en_svm_no_empath.txt"
+    results_file = "../results/res_svm_no_empath.txt"
     model_file = "../models/svm_no_empath.pkl"
     empath = False
-    train = False
+    train = True
+
     main(
         training_data_file=training_data_file,
         development_data_file=development_data_file,
