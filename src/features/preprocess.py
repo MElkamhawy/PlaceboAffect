@@ -1,70 +1,121 @@
 import re
-import string
 import pandas as pd
 import numpy as np
-import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import TweetTokenizer
 from nltk.stem import WordNetLemmatizer
-from sklearn.feature_extraction.text import CountVectorizer
-import gensim
-from gensim.models import Word2Vec
-from empath import Empath
-
 
 class Data:
     def __init__(self, raw_df, name):
         self.raw_df = raw_df
-        self.name = name  # train, dev, or test
-        self.vectorizer = None
-        self.text = None
-        self.label = None
-        self.vector = None
+        self.name = name  
+        self.texts = None
+        self.labels = None
 
     @classmethod
     def from_csv(cls, train_path, name):
+        """
+        Create an instance of the class from a CSV file.
+
+        Args:
+            train_path (str): The file path of the CSV file to read.
+            name (str): The name of the instance (train, dev or test).
+
+        Returns:
+            cls: An instance of the class initialized with data from the CSV file.
+        """
         return cls(pd.read_csv(train_path), name)
 
-    def process(self, text_name, target_name, vectorizer=None, empath=False):
-        # Convert target into array of labels
-        self.label = self._process_target(target_name)
-        # Preprocess text data
-        self.text = self._process_text(text_name)
-        self.vector = self._process_features(vectorizer, empath)
+    def process(self, text_name, target_name):
+        """
+        Process the text data and target labels.
+
+        Args:
+            text_name (str): The name of the text column in the raw data.
+            target_name (str): The name of the target column in the raw data.
+        """
+        self.labels = self._process_target(target_name)
+        self.texts = self._process_text(text_name)
 
     def _process_target(self, target_name):
+        """
+        Process the target column in the raw data.
+
+        Args:
+            target_name (str): The name of the target column in the raw data.
+
+        Returns:
+            np.ndarray: A numpy array of target labels.
+        """
         return np.array(self.raw_df[target_name])
 
     def _process_text(self, text_name):
+        """
+        Process the text column in the raw data.
+
+        Args:
+            text_name (str): The name of the text column in the raw data.
+
+        Returns:
+            np.ndarray: A numpy array of cleaned text data.
+        """
         text_clean = np.array(
             [self._clean_text(element) for element in self.raw_df[text_name]]
         )
+        print(text_clean)
         return text_clean
-    
-    def _process_features(self, vectorizer=None, empath=False):
-        text_tokenize = [self._tokenize(element) for element in self.text]
-        text_vectors = self._vectorize_text(text_tokenize, vectorizer)
-        # if empath, apply empath to text
-        if empath:
-            empath_vectors = [self._calculate_empath(element) for element in self.text]
-            text_vectors = np.concatenate((text_vectors, empath_vectors), axis=1)
-        return text_vectors
 
     def _tokenize(self, text):
+        """
+        Tokenize the input string using nltk.TweetTokenizer()
+
+        Args:
+            text (str): Input string to tokenize
+
+        Returns:
+            list: A list of lemmatized tokens
+        """
         tweet_tokenizer = TweetTokenizer()
         tokens = tweet_tokenizer.tokenize(text)
         return tokens
 
     def _lemmatize(self, tokens):
+        """
+        Lemmatize the input tokens.
+
+        Args:
+            tokens (list): A list of tokens to lemmatize.
+
+        Returns:
+            list: A list of lemmatized tokens.
+        """
         lemmatizer = WordNetLemmatizer()
         lemmatized_tokens = [lemmatizer.lemmatize(token) for token in tokens]
         return lemmatized_tokens
 
     def _remove_stopwords(self, tokens):
+        """
+        Remove stopwords from the input tokens.
+
+        Args:
+            tokens (list): A list of tokens to remove stopwords from.
+
+        Return:
+            list: A list of tokens with stopwords removed.
+        """
         stop_words = set(stopwords.words("english"))
         return [token for token in tokens if not token in stop_words]
 
     def _extract_hashtags(self, text):
+        """
+        Extract hashtags from the input text and split on capital letters.
+
+        Args:
+            text (str): Input string to to extract hashtags from.
+
+        Returns:
+            list: A list of extracted hashtag tokens in lowercase.
+        """
         hashtags = re.findall(r"#[A-Za-z0-9_]+", text)
         hashtag_tokens_combined = []
         for hashtag in hashtags:
@@ -74,9 +125,14 @@ class Data:
 
     def _clean_text(self, original_text):
         """
-        Clean up the description: lowercase, remove brackets, remove various characters
-        TODO: Determine how much of this is actually necessary.
-            This is pretty standard preprocessing, but not necessarily how we want to treat tweets.
+        Clean and prepare text: extract and process hashtags, convert to lowercase,
+        remove URLs, mentions, remove special characters.
+
+        Args:
+            original_txt (str): The raw text string to be cleaned.
+
+        Return:
+            str: The cleaned text.
         """
         hashtag_tokens = self._extract_hashtags(original_text)
         text = str(original_text).lower()  # Convert to lowercase
@@ -94,32 +150,3 @@ class Data:
             clean_text = str(original_text).lower()
         return clean_text
     
-    def _calculate_empath(self, text):
-        lexicon = Empath()
-        empath_dict = lexicon.analyze(text, normalize=True)
-        empath_values = np.array(list(empath_dict.values()))
-        return empath_values
-    
-    def _vectorize_text(self, text, vectorizer=None):
-
-        # Use an existing vectorizer for the training data.
-        if vectorizer is None:
-            if self.name == "train":
-                vectorizer = gensim.models.Word2Vec(text, min_count = 1, vector_size = 100, window = 5) # CBOW model
-                self.vectorizer = vectorizer
-            else:
-                raise ValueError("vectorizer cannot be None when self.name is not 'train'")
-
-        # Apply the Word2Vec model to each word, then average for the entire tweet
-        vectors = []
-        for tweet in text:
-            temp_vectors = []
-            for word in tweet:
-                try:
-                    temp_vectors.append(vectorizer.wv[word])
-                except:
-                    temp_vectors.append([0]*100)
-            average_vector = np.mean(temp_vectors, axis=0)
-            vectors.append(average_vector)
-
-        return vectors
