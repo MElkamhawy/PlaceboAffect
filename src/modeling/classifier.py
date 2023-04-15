@@ -35,6 +35,7 @@ class Model:
     def save_model(self, path):
         joblib.dump(self.model, path)
 
+
     def _fit_svm(self, text: np.ndarray, label: np.ndarray, cv_folds: int) -> SVC:
         """
         Fits an SVM classifier on the predictor variable set, text, with the target variable, label.
@@ -47,3 +48,4 @@ class Model:
         grid_search.fit(text, label)
 
         return grid_search
+
