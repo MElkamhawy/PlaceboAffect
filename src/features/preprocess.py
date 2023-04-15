@@ -75,8 +75,6 @@ class Data:
     def _clean_text(self, original_text):
         """
         Clean up the description: lowercase, remove brackets, remove various characters
-        TODO: Determine how much of this is actually necessary.
-            This is pretty standard preprocessing, but not necessarily how we want to treat tweets.
         """
         hashtag_tokens = self._extract_hashtags(original_text)
         text = str(original_text).lower()  # Convert to lowercase
@@ -102,7 +100,7 @@ class Data:
     
     def _vectorize_text(self, text, vectorizer=None):
 
-        # Use an existing vectorizer for the training data.
+        # Use an existing vectorizer for the dev data.
         if vectorizer is None:
             if self.name == "train":
                 vectorizer = gensim.models.Word2Vec(text, min_count = 1, vector_size = 100, window = 5) # CBOW model
