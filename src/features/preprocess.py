@@ -9,9 +9,9 @@ from nltk.stem import WordNetLemmatizer
 class Data:
     def __init__(self, raw_df, name):
         self.raw_df = raw_df
-        self.name = name
-        self.texts = None
-        self.labels = None
+        self.name = name  
+        self.text = None
+        self.label = None
 
     @classmethod
     def from_csv(cls, train_path, name):
