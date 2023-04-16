@@ -9,7 +9,7 @@ from nltk.stem import WordNetLemmatizer
 class Data:
     def __init__(self, raw_df, name):
         self.raw_df = raw_df
-        self.name = name  
+        self.name = name
         self.text = None
         self.label = None
 
@@ -35,8 +35,8 @@ class Data:
             text_name (str): The name of the text column in the raw data.
             target_name (str): The name of the target column in the raw data.
         """
-        self.labels = self._process_target(target_name)
-        self.texts = self._process_text(text_name)
+        self.label = self._process_target(target_name)
+        self.text = self._process_text(text_name)
 
     def _process_target(self, target_name):
         """
@@ -63,7 +63,6 @@ class Data:
         text_clean = np.array(
             [self._clean_text(element) for element in self.raw_df[text_name]]
         )
-        print(text_clean)
         return text_clean
 
     def _tokenize(self, text):
