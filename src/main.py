@@ -11,7 +11,7 @@ import pandas as pd
 
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, classification_report
 
-from features import preprocess
+from features import preprocess, extract_features
 from modeling import classifier
 
 from argparse import ArgumentParser
@@ -38,18 +38,21 @@ def main(
     data_dev = preprocess.Data.from_csv(development_data_file, name="dev")
 
     # Preprocess Data
-    data_train.process(
-        text_name="text", target_name="HS", empath=empath)
-    data_dev.process(
-        text_name="text", target_name="HS", vectorizer=data_train.vectorizer, empath=empath
-    )
+    data_train.process(text_name="text", target_name="HS")
+    data_dev.process(text_name="text", target_name="HS")
+    
+    # Extract Features from Data
+    train_vector = extract_features.Vector(name="train", text=data_train.text)
+    dev_vector = extract_features.Vector(name="dev", text=data_dev.text)
+    train_vector.process_features(empath=empath)
+    dev_vector.process_features(vectorizer=train_vector.vectorizer, empath=empath)
 
     if train:
         # Train Model
         parameter_grid = {'C': [0.1, 1, 10], 'kernel': ['linear', 'rbf', 'sigmoid']}
         # parameter_grid = {"C": [0.1], "kernel": ["linear"]}
         clf = classifier.Model(parameter_grid)
-        clf.fit(data_train.vector, data_train.label, cv_folds=5, algorithm='SVM')
+        clf.fit(train_vector.vector, data_train.label, cv_folds=5, algorithm='SVM')
 
         # Save Model
         clf.save_model(model_file)
@@ -57,7 +60,7 @@ def main(
         clf = classifier.Model.from_file(model_file)
 
     # Predict on Dev Set
-    pred_labels = clf.predict(data_dev.vector)
+    pred_labels = clf.predict(dev_vector.vector)
 
     # Output Predictions
     output_lines(list(pred_labels), predictions_file)
