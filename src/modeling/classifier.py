@@ -94,7 +94,7 @@ class Model:
         svm = SVC()
 
         # Create GridSearchCV with k-fold cross-validation
-        grid_search = GridSearchCV(svm, self.hyper_parameters, cv=cv_folds)
+        grid_search = GridSearchCV(svm, self.hyper_parameters, cv=cv_folds, scoring='f1_macro', refit=True, n_jobs=-1)
         grid_search.fit(text, label)
 
         return grid_search
