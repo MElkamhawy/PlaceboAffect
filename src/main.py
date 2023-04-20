@@ -108,12 +108,14 @@ if __name__ == "__main__":
     training_data_file = "../data/train/en/hateval2019_en_train.csv"
     development_data_file = "../data/dev/en/hateval2019_en_dev.csv"
     test_data_file = "../data/test/en/hateval2019_en_test.csv"
-    empath = False
+    empath = True
     train = True
     feature_strategy = 'w2v'
-    predictions_file = f"../outputs/pred_en_{feature_strategy}.txt"
-    results_file = f"../results/res_en_{feature_strategy}.txt"
-    model_file = f"../models/svm_en_{feature_strategy}.pkl"
+
+    # TODO it might be worth making these variable based on the feature_strategy and empth arguments only. f strings could be added to main below.
+    predictions_file = f"../outputs/pred_en_{feature_strategy}{'_empath' if empath else ''}.txt"
+    results_file = f"../results/res_en_{feature_strategy}{'_empath' if empath else ''}.txt"
+    model_file = f"../models/svm_en_{feature_strategy}{'_empath' if empath else ''}.pkl"
 
     main(
         training_data_file=training_data_file,
