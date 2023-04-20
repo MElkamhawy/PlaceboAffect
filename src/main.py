@@ -26,11 +26,12 @@ def main(
         training_data_file,
         development_data_file,
         test_data_file,
+        empath,
+        train,
+        strategy,
         predictions_file,
         results_file,
-        model_file,
-        empath,
-        train
+        model_file
 ):
     # Load Data from CSV and store as preprocess.Data object
     data_train = preprocess.Data.from_csv(training_data_file, name="train")
@@ -39,12 +40,14 @@ def main(
     # Preprocess Data
     data_train.process(text_name="text", target_name="HS")
     data_dev.process(text_name="text", target_name="HS")
-    
+    print('preprocessing complete')
+
     # Extract Features from Data
     train_vector = extract_features.Vector(name="train", text=data_train.text)
     dev_vector = extract_features.Vector(name="dev", text=data_dev.text)
-    train_vector.process_features(empath=empath)
-    dev_vector.process_features(vectorizer=train_vector.vectorizer, empath=empath)
+    train_vector.process_features(strategy=strategy, empath=empath)
+    dev_vector.process_features(strategy=strategy, vectorizer=train_vector.vectorizer, empath=empath)
+    print('feature extraction complete')
 
     if train:
         # Train Model
@@ -55,6 +58,8 @@ def main(
 
         # Save Model
         clf.save_model(model_file)
+        print('training complete')
+
     else:
         clf = classifier.Model.from_file(model_file)
 
@@ -66,14 +71,14 @@ def main(
 
     # Evaluate classifier
     accuracy = accuracy_score(data_dev.label, pred_labels)
-    precision = precision_score(data_dev.label, pred_labels, average="binary")
-    recall = recall_score(data_dev.label, pred_labels, average="binary")
-    f1 = f1_score(data_dev.label, pred_labels, average="binary")
+    precision = precision_score(data_dev.label, pred_labels)
+    recall = recall_score(data_dev.label, pred_labels)
+    f1 = f1_score(data_dev.label, pred_labels, average="macro")
 
     print(f'accuracy = {accuracy:.2f}')
     print(f'precision = {precision:.2f}')
     print(f'recall = {recall:.2f}')
-    print(f'f1 = {f1:.2f}')
+    print(f'f1_macro = {f1:.2f}')
 
     report = classification_report(data_dev.label, pred_labels)
     print(report)
@@ -82,6 +87,10 @@ def main(
     # TODO Mohamed to replace eval script provided by shared task
     with open(results_file, 'w') as f:
         f.write(report)
+        f.write(f'\naccuracy = {accuracy:.2f}')
+        f.write(f'\nprecision = {precision:.2f}')
+        f.write(f'\nrecall = {recall:.2f}')
+        f.write(f'\nf1_macro = {f1:.2f}')
 
 
 if __name__ == "__main__":
@@ -99,19 +108,21 @@ if __name__ == "__main__":
     training_data_file = "../data/train/en/hateval2019_en_train.csv"
     development_data_file = "../data/dev/en/hateval2019_en_dev.csv"
     test_data_file = "../data/test/en/hateval2019_en_test.csv"
-    predictions_file = "../outputs/pred_en_svm.txt"
-    results_file = "../results/res_en_svm.txt"
-    model_file = "../models/svm_en.pkl"
     empath = False
     train = True
+    feature_strategy = 'w2v'
+    predictions_file = f"../outputs/pred_en_{feature_strategy}.txt"
+    results_file = f"../results/res_en_{feature_strategy}.txt"
+    model_file = f"../models/svm_en_{feature_strategy}.pkl"
 
     main(
         training_data_file=training_data_file,
         development_data_file=development_data_file,
         test_data_file=test_data_file,
+        empath=empath,
+        train=train,
+        strategy=feature_strategy,
         predictions_file=predictions_file,
         results_file=results_file,
-        model_file=model_file,
-        empath=empath,
-        train=train
+        model_file=model_file
     )
