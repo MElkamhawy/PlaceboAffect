@@ -48,13 +48,13 @@ def create_arg_parser():
     argument_parser = ArgumentParser(description='D2 for PlaceboAffect - Course Ling 573.')
     argument_parser.add_argument('--mode', type=str, choices=['train', 'test'], default='train',
                                  help='Train or test the model')
-    argument_parser.add_argument('--baseline', help='Baseline Model', action='store_true', default=True)
+    argument_parser.add_argument('--baseline', help='Baseline Model', action='store_true', default=False)
     argument_parser.add_argument('--train-data', help='Training Data File Path',
                                  default='../data/train/en/hateval2019_en_train.csv')
     argument_parser.add_argument('--test-data', help='Testing Data File Path',
                                  default='../data/dev/en/hateval2019_en_dev.csv')
     argument_parser.add_argument('--model', help='Model File Path', default='../models/D2/svm_en_{sys}.pkl')
-    argument_parser.add_argument('--empath', help='Empath Feature', action='store_true', default=True)
+    argument_parser.add_argument('--empath', help='Empath Feature', action='store_true', default=False)
     argument_parser.add_argument('--result', help='Output File Path', default='../results/res_en_svm_{sys}.txt')
     argument_parser.add_argument('--predictions', help='Predictions File Path', default='../outputs/D2/pred_en_svm_{sys}.txt')
     return argument_parser
@@ -125,8 +125,9 @@ def run(mode, baseline, training_data_file, test_data_file, result_file, predict
     dev_vector = extract_features.Vector(name=DEV_DATASET_NAME, text=data_dev.text)
     train_vector.process_features(baseline, empath=empath)
     dev_vector.process_features(baseline, vectorizer=train_vector.vectorizer, empath=empath)
+    clf  = None 
 
-    if mode is TRAIN_MODE:
+    if mode == TRAIN_MODE:
         # Train Model
         parameter_grid = {'C': [0.1, 1, 10], 'kernel': ['linear', 'rbf', 'sigmoid']}
         # parameter_grid = {"C": [0.1], "kernel": ["linear"]}
@@ -135,8 +136,10 @@ def run(mode, baseline, training_data_file, test_data_file, result_file, predict
 
         # Save Model
         clf.save_model(model_file)
-    else:
+    elif mode == TEST_MODE:
         clf = classifier.Model.from_file(model_file)
+    else:
+        eprint(f'Invalid Option: {mode}! - Only Train or Test are allowed.')
 
     # Predict on Dev Set
     pred_labels = clf.predict(dev_vector.vector)
