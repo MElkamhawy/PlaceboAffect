@@ -5,6 +5,7 @@ import random
 import sys
 from argparse import ArgumentParser
 import numpy as np
+import pandas as pd
 
 import nltk
 from sklearn.metrics import accuracy_score, classification_report
