@@ -1,9 +1,5 @@
-import re
-import string
-import pandas as pd
-import numpy as np
 import joblib
-
+import numpy as np
 from sklearn.model_selection import GridSearchCV
 from sklearn.svm import SVC
 
@@ -61,7 +57,7 @@ class Model:
         Returns:
             A numpy array of predicted target variables.
         """
-        # Get best hyperparameters and model
+        # Get the best hyperparameters and model
         best_model = self.model.best_estimator_
 
         # Predict on test set with best model
