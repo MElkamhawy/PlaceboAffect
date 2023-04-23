@@ -10,3 +10,4 @@ dependencies:
   - gensim
   - nltk
   - spacy
+  - scikit-learn
