@@ -145,7 +145,9 @@ def run(mode, baseline, training_data_file, test_data_file, result_file, predict
     pred_labels = clf.predict(dev_vector.vector)
 
     # Output Predictions
-    output_lines(list(pred_labels), predictions_file)
+    pred_df = data_dev.raw_df[['id']].copy()
+    pred_df['pred'] = pred_labels
+    pred_df.to_csv(predictions_file, sep='\t', header=False, index=False)
 
     # Evaluate classifier
     acc_hs, p_hs, r_hs, f1_hs = evaluate(data_dev.label, pred_labels)
