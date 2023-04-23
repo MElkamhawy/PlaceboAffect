@@ -49,6 +49,7 @@ def main(
     dev_vector.process_features(strategy=strategy, vectorizer=train_vector.vectorizer, empath=empath)
     print('feature extraction complete')
 
+
     if train:
         # Train Model
         parameter_grid = {'C': [0.1, 1, 10], 'kernel': ['linear', 'rbf', 'sigmoid']}
@@ -58,7 +59,9 @@ def main(
 
         # Save Model
         clf.save_model(model_file)
+        print(clf.model.best_params_)
         print('training complete')
+
 
     else:
         clf = classifier.Model.from_file(model_file)
@@ -108,7 +111,7 @@ if __name__ == "__main__":
     training_data_file = "../data/train/en/hateval2019_en_train.csv"
     development_data_file = "../data/dev/en/hateval2019_en_dev.csv"
     test_data_file = "../data/test/en/hateval2019_en_test.csv"
-    empath = True
+    empath = False
     train = True
     feature_strategy = 'w2v'
 
