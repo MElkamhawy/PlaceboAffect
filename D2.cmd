@@ -1,6 +1,6 @@
 universe            = vanilla
 executable          = src/test.sh
-myfiles             = /home2/mohame/PlaceboAffect
+myfiles             = ./
 getenv              = true
 error               = error.err
 log                 = logs.log
