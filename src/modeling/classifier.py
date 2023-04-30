@@ -8,7 +8,7 @@ from itertools import product
 
 
 class Model:
-    def __init__(self, hyper_parameters, model=None):
+    def __init__(self, hyper_parameters=None, model=None):
         """
         Initializes the Model object.
 
