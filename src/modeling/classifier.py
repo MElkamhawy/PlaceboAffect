@@ -122,7 +122,6 @@ class Model:
             model = self._fit_sklearn( hyp_params=combination, text=text, label=label)
             preds = model.predict(tuning[0])
             p_hs, r_hs, f1_hs, support = precision_recall_fscore_support(preds, tuning[1], average="macro")
-            print(f1_hs)
             if f1_hs > best_f1:
                 best_f1 = f1_hs
                 best_model = model
