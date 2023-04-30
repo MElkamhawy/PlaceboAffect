@@ -116,10 +116,12 @@ def run(mode, baseline, training_data_file, test_data_file, result_file, predict
     # Load Data from CSV and store as preprocess.Data object
     data_train = preprocess.Data.from_csv(training_data_file, name=TRAIN_DATASET_NAME)
     data_dev = preprocess.Data.from_csv(test_data_file, name=DEV_DATASET_NAME)
+    print('Data Load Complete')
 
     # Preprocess Data
     data_train.process(text_name=TEXT_COL, target_name=TARGET_LABEL_COL)
     data_dev.process(text_name=TEXT_COL, target_name=TARGET_LABEL_COL)
+    print('Data Preprocessing Complete')
 
     # Extract Features from Data
     train_vector = extract_features.Vector(name=TRAIN_DATASET_NAME, text=data_train.text)
@@ -127,13 +129,14 @@ def run(mode, baseline, training_data_file, test_data_file, result_file, predict
     train_vector.process_features(baseline, empath=empath)
     dev_vector.process_features(baseline, vectorizer=train_vector.vectorizer, empath=empath)
     clf  = None 
+    print('Feature Extraction Complete')
 
     if mode == TRAIN_MODE:
         # Train Model
         parameter_grid = {'C': [0.1, 1, 10], 'kernel': ['linear', 'rbf', 'sigmoid']}
         # parameter_grid = {"C": [0.1], "kernel": ["linear"]}
         clf = classifier.Model(parameter_grid)
-        clf.fit(train_vector.vector, data_train.label, cv_folds=5, algorithm=CLASSIFICATION_ALGORITHM)
+        clf.fit(train_vector.vector, data_train.label, tuning=(dev_vector.vector, data_dev.label), algorithm=CLASSIFICATION_ALGORITHM)
 
         # Save Model
         clf.save_model(model_file)
@@ -141,6 +144,8 @@ def run(mode, baseline, training_data_file, test_data_file, result_file, predict
         clf = classifier.Model.from_file(model_file)
     else:
         eprint(f'Invalid Option: {mode}! - Only Train or Test are allowed.')
+
+    print('Model Training Complete')
 
     # Predict on Dev Set
     pred_labels = clf.predict(dev_vector.vector)
@@ -172,8 +177,17 @@ def main():
     nltk.data.path.append("/corpora/nltk/nltk-data")
     np.random.seed(5)
     random.seed(5)
-    args = create_arg_parser().parse_args()
-    run(args.mode, args.baseline, args.train_data, args.test_data, args.result, args.predictions, args.model, args.empath)
+    # args = create_arg_parser().parse_args()
+    # run(args.mode, args.baseline, args.train_data, args.test_data, args.result, args.predictions, args.model, args.empath)
+    mode = 'train'
+    baseline = True
+    train_data = "../data/train/en/hateval2019_en_train.csv"
+    test_data = "../data/dev/en/hateval2019_en_dev.csv"
+    result = "../results/res_en_svm_baseline_tune.out"
+    predictions = "../outputs/D2/pred_en_svm_baseline_tune.txt"
+    empath = False
+    model = "../models/test.pkl"
+    run(mode, baseline, train_data, test_data, result, predictions, model, empath)
 
 
 if __name__ == '__main__':

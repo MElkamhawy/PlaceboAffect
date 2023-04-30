@@ -1,29 +1,26 @@
 import joblib
 import numpy as np
-import scipy.sparse as sp
 
-from sklearn.model_selection import GridSearchCV, PredefinedSplit, ShuffleSplit
 from sklearn.metrics import precision_recall_fscore_support
 
 from sklearn.svm import SVC
 from itertools import product
 
 
-# from src.features.extract_features import Vector
-
 class Model:
-    def __init__(self, hyper_parameters=None, model=None):
+    def __init__(self, hyper_parameters, model=None):
         """
         Initializes the Model object.
 
         Args:
-            hyper_parameters: A dictionary of hyperparameters for the model.
-            model: A trained model object.
+            hyper_parameters: A dictionary of hyperparameters for the model. Default is None.
+            model: A trained model object. Default is None.
         """
         self.hyper_parameters = hyper_parameters
         self.model = model
         self.text = None
         self.label = None
+        self.algorithm = None
 
     @classmethod
     def from_file(cls, path):
@@ -51,39 +48,12 @@ class Model:
         Raises:
             ValueError: If algorithm is not 'SVM'.
         """
+        self.algorithm = algorithm
+
         if algorithm == 'SVM':
-            # self.model = self._fit_svm(text, label, tuning)
-            self.model = self._tune_sklearn(sklearn_model=SVC(), text=text, label=label, tuning=tuning)
-
-    def _tune_sklearn(self, sklearn_model, text, label, tuning):
-        # Convert parameter dict into list of parameter combinations
-        param_dicts = self._get_param_combinations(self.hyper_parameters)
-
-        # fit sklearn model
-
-
-
-        return model
-
-    def _grid_search(self, model, params, text, label, tuning):
-        # compare each fit to the best model and best f1
-        best_model = None
-        best_f1 = 0
-
-        # loop through all combinations of parameters,
-        for combination in params:
-            model = model(C=combination['C'], kernel=combination['kernel'])
-            model.fit(text, label)
-            preds = model.predict(tuning[0])
-            p_hs, r_hs, f1_hs, support = precision_recall_fscore_support(preds, tuning[1], average="macro")
-            print(f1_hs)
-            if f1_hs > best_f1:
-                best_f1 = f1_hs
-                best_model = model
-
-        return best_model
-
-
+            self.model = self._tune_sklearn(text=text, label=label, tuning=tuning)
+        else:
+            ValueError('Model must be SVM')
 
     def predict(self, text):
         """
@@ -109,60 +79,69 @@ class Model:
         """
         joblib.dump(self.model, path)
 
-    def _prep_xy(self, text, label, tuning):
-        if isinstance(tuning, int):
-            cv = tuning
-            x = text
-            y = label
-        elif isinstance(tuning, tuple):
-            x, y, cv = self._prep_custom_cv(text, label, tuning)
-        else:
-            print("tuning argument must be int or tuple")
+    def _tune_sklearn(self, text, label, tuning):
+        """
+        Performs hyperparameter tuning on an SVM model using a grid search.
 
-        return x, y, cv
+        Args:
+            text: A numpy array of predictor variables.
+            label: A numpy array of target variables.
+            tuning: Number of cross-validation folds or tuple of (Vector.vector, Data.label)
 
-    def _prep_custom_cv(self, text, label, tuning):
-        if isinstance(text, sp.csr_matrix):
-            text_train = text.toarray()
-        elif isinstance(text, np.ndarray):
-            text_train = text
-        else:
-            TypeError('text argument must be ndarray or csr_matrix')
+        Returns:
+            A trained SVM model object with the best hyperparameters found by the grid search.
+        """
+        # Convert parameter dict into list of parameter combinations
+        param_dicts = self._get_param_combinations(self.hyper_parameters)
 
-        if isinstance(tuning[0], sp.csr_matrix):
-            text_dev = tuning[0].toarray()
-        elif isinstance(tuning[0], np.ndarray):
-            text_dev = tuning[0]
-        else:
-            TypeError('tuning[0] argument must be ndarray or csr_matrix')
+        # fit sklearn model
+        model = self._grid_search(params=param_dicts, text=text, label=label, tuning=tuning)
 
-        label_dev = tuning[1]
+        return model
 
-        x = np.concatenate((text_train, text_dev))
-        print(x.shape)
-        y = np.concatenate((label, label_dev))
-        print(y.shape)
+    def _grid_search(self, params, text, label, tuning):
+        """
+        Performs a grid search on an SVM model to find the best hyperparameters.
 
-        # test_fold = np.concatenate([
-        #     np.full(text_train.shape[0], -1, dtype=np.int8),
-        #     np.zeros(text_dev.shape[0], dtype=np.int8)])
+        Args:
+            params: A list of dictionaries, where each dictionary represents a unique combination of hyperparameters
+                to test.
+            text: A numpy array or csr_matrix of predictor variables.
+            label: A numpy array of target variables.
+            tuning: Number of cross-validation folds or tuple of (Vector.vector, Data.label)
 
-        # generate a test fold array indicating the training and dev splits
-        test_fold = np.zeros(len(x))
-        test_fold[:len(text_train)] = -1
+        Returns:
+            A trained model object with the best hyperparameters found by the grid search.
+        """
+        # compare each fit to the best model and best f1
+        best_model = None
+        best_f1 = 0
 
-        # create a PredefinedSplit object using the test fold array
-        ps = PredefinedSplit(test_fold)
-        ps = ShuffleSplit(n_splits=2, test_size=0.5, random_state=42)
+        # loop through all combinations of parameters,
+        for combination in params:
+            model = self._fit_sklearn( hyp_params=combination, text=text, label=label)
+            preds = model.predict(tuning[0])
+            p_hs, r_hs, f1_hs, support = precision_recall_fscore_support(preds, tuning[1], average="macro")
+            print(f1_hs)
+            if f1_hs > best_f1:
+                best_f1 = f1_hs
+                best_model = model
 
-        # ps = PredefinedSplit(test_fold.tolist())
+        return best_model
 
-        return x, y, ps
+    def _fit_sklearn(self, hyp_params, text, label):
+        """
+        Fits an sklearn model using the given hyperparameters.
 
-    def _convert_to_ndarray(self, data_vector):
-        pass
+        Args
+        """
+        if self.algorithm == 'SVM':
+            model = SVC(C=hyp_params['C'], kernel=hyp_params['kernel'])
+            model.fit(text, label)
+        return model
 
-    def _get_param_combinations(self, param_grid):
+    @staticmethod
+    def _get_param_combinations(param_grid):
         """
         Returns a list of every unique combination of hyperparameters in the given parameter grid,
         where each combination consists of one value for each hyperparameter.
