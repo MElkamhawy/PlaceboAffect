@@ -11,3 +11,5 @@ dependencies:
   - nltk
   - spacy
   - scikit-learn
+  - emoji
+  - contractions

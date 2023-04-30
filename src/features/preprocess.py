@@ -87,27 +87,26 @@ class Data:
         )
         return text_clean
 
-    def _handle_negation(self, text):
+    def _handle_negation(self, tokens):
         """
         Adds a "NEG_" prefix to the word following negation words.
 
         Args:
-            text (str): The text string to handle negation in.
+            tokens (list): A list of tokens to handle negation in.
 
         Return:
-            str: The text with negation handled.
+            str: A list of tokens with negation handled.
         """
         processed_words = []
         negate_next_word = False
-        for word in text.split():
+        for word in tokens:
             if word in self.negation_words:
                 negate_next_word = True
             elif negate_next_word:
                 word = f"NEG_{word}"
                 negate_next_word = False
             processed_words.append(word)
-        processed_text = " ".join(processed_words)
-        return processed_text
+        return processed_words
 
     def _tokenize(self, text):
         """
@@ -156,13 +155,13 @@ class Data:
 
     def _extract_hashtags_and_mentions(self, text):
         """
-        Extract hashtags mentions from the input text and replace them with processed versions.
+        Extract hashtags and mentions from the input text and replace them with processed versions.
 
         Args:
-            text (str): Input string to extract mentions from.
+            text (str): Input string to extract mentions and hashtags from.
 
         Returns:
-            str: The modified string with mentions replaced by their processed versions.
+            str: The modified string with hashtags and mentions replaced by their processed versions.
         """
         if self.remove_mentions:
             tags = re.findall(r"[#][A-Za-z0-9_]+", text)
@@ -177,13 +176,13 @@ class Data:
 
     def _process_tag(self, tag):
         """
-        Process a given mention string to remove "@" symbol and split based on underscore or capitalization.
+        Process a given hashtag/mention string to remove "@" or "#" symbol and split based on underscore or capitalization.
 
         Args:
-            mention (str): Mention string to process.
+            mention (str): Hashtag/mention string to process.
 
         Returns:
-            str: The processed version of the mention.
+            str: The processed version of the hashtag/mention.
         """
         tag = tag[1].upper() + tag[2:]
         # Split the mention into tokens based on underscore or capitalization
@@ -192,8 +191,8 @@ class Data:
             processed_tag = " ".join(tokens_split_by_underscore)
         else:
             tokens_split_by_capitalization = re.findall(r"[A-Z]+[a-z]*", tag)
-            processed_tag = " ".join(tokens_split_by_capitalization)
-        return processed_tag.lower()
+            processed_tag = " " + " ".join(tokens_split_by_capitalization)
+        return processed_tag
 
     def _replace_emoji_with_words(self, text):
         """
@@ -234,11 +233,12 @@ class Data:
         curse_words = {
             r"\bstfu\b": "shut the fuck up",
             r"\bwtf\b": "what the fuck",
+            r"\bgtfo": "get the fuck out",
             r"\bf[uck*]+ing?\b": "fucking",
             r"\bf[uck*]+er\b": "fucker",
             r"\bf[uck*]+\b": "fuck",
-            r"\bb[i*][t*][c*]h\b": "bitch",
-            r"sh[1!-*]t": "shit",
+            r"\bb[i\*][t\*][c\*]h\b": "bitch",
+            r"sh[1!\-*]t": "shit",
             r"a\*\*": "ass",
         }
         for key, value in curse_words.items():
@@ -260,8 +260,6 @@ class Data:
         text = self._replace_emoji_with_words(text)
         text = self._replace_curse_words(text)
         text = self._expand_contractions(text)
-        text = text.lower()
-        text = self._handle_negation(text)
         return text
 
     def _clean_text(self, original_text):
@@ -275,7 +273,9 @@ class Data:
         Return:
             str: The cleaned text.
         """
-        text = str(original_text.encode("utf-8"))  # Parse out the unicode characters
+        text = str(
+            original_text.encode("utf-8")
+        ).lower()  # Parse out the unicode characters
         text = re.sub(
             r"^b'?", "", text
         )  # Remove byte designator at beginning of the line
@@ -283,17 +283,18 @@ class Data:
         text = re.sub(r"https?://\S+", "", text)  # Remove URLs
         text = re.sub(r"&[^;\s]+;", "", text)  # Remove html characters LIKE &amp;
         text = re.sub(r"\\x\S+", "", text)  # Remove unicode characters
-        text = re.sub(r"'\bs\b", "", text)
-        text = re.sub(r"[^\w\s]+", " ", text)  # Remove non-word characters and numbers
+        text = re.sub(r"'\bs\b", "", text)  # Remove 's
         if self.remove_numbers:
             text = re.sub(r"\b\d+(?:st|nd|rd|th)\b", "", text)
             text = re.sub(r"\d+", "", text)
-        text = re.sub(r"\s+", " ", text)  # Remove extra whitespaces
+        text = re.sub(
+            r"[\W\s]+", " ", text
+        )  # Remove non-word characters and extra whitespaces
         return text
 
     def _prepare_text(self, original_text):
         """
-        Prepares the given text by tokenizing, lemmatizing, and removing stop words(optional).
+        Prepares the given text by tokenizing, lemmatizing, handling negation, and removing stop words(optional).
 
         Args:
             original_text (str): The text string to be prepared.
@@ -302,7 +303,8 @@ class Data:
             str: The cleaned and prepared text.
         """
         tokens = self._tokenize(original_text)
-        lemmatized_tokens = self._lemmatize(tokens)
+        tokens_with_negation_handled = self._handle_negation(tokens)
+        lemmatized_tokens = self._lemmatize(tokens_with_negation_handled)
         if self.remove_stopwords:
             lemmatized_tokens = self._remove_stopwords(lemmatized_tokens)
         text = " ".join(lemmatized_tokens)
