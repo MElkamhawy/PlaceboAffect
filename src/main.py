@@ -57,7 +57,8 @@ def create_arg_parser():
     argument_parser.add_argument('--model', help='Model File Path', default='../models/D2/svm_en_{sys}.pkl')
     argument_parser.add_argument('--empath', help='Empath Feature', action='store_true', default=False)
     argument_parser.add_argument('--result', help='Output File Path', default='../results/res_en_svm_{sys}.txt')
-    argument_parser.add_argument('--predictions', help='Predictions File Path', default='../outputs/D2/pred_en_svm_{sys}.txt')
+    argument_parser.add_argument('--predictions', help='Predictions File Path',
+                                 default='../outputs/D2/pred_en_svm_{sys}.txt')
     return argument_parser
 
 
@@ -128,7 +129,7 @@ def run(mode, baseline, training_data_file, test_data_file, result_file, predict
     dev_vector = extract_features.Vector(name=DEV_DATASET_NAME, text=data_dev.text)
     train_vector.process_features(baseline, empath=empath)
     dev_vector.process_features(baseline, vectorizer=train_vector.vectorizer, empath=empath)
-    clf  = None 
+    clf = None
     print('Feature Extraction Complete')
 
     if mode == TRAIN_MODE:
@@ -136,7 +137,8 @@ def run(mode, baseline, training_data_file, test_data_file, result_file, predict
         parameter_grid = {'C': [0.1, 1, 10], 'kernel': ['linear', 'rbf', 'sigmoid']}
         # parameter_grid = {"C": [0.1], "kernel": ["linear"]}
         clf = classifier.Model(parameter_grid)
-        clf.fit(train_vector.vector, data_train.label, tuning=(dev_vector.vector, data_dev.label), algorithm=CLASSIFICATION_ALGORITHM)
+        clf.fit(train_vector.vector, data_train.label, tuning=(dev_vector.vector, data_dev.label),
+                algorithm=CLASSIFICATION_ALGORITHM)
 
         # Save Model
         clf.save_model(model_file)
@@ -177,17 +179,9 @@ def main():
     nltk.data.path.append("/corpora/nltk/nltk-data")
     np.random.seed(5)
     random.seed(5)
-    # args = create_arg_parser().parse_args()
-    # run(args.mode, args.baseline, args.train_data, args.test_data, args.result, args.predictions, args.model, args.empath)
-    mode = 'train'
-    baseline = True
-    train_data = "../data/train/en/hateval2019_en_train.csv"
-    test_data = "../data/dev/en/hateval2019_en_dev.csv"
-    result = "../results/res_en_svm_baseline_tune.out"
-    predictions = "../outputs/D2/pred_en_svm_baseline_tune.txt"
-    empath = False
-    model = "../models/test.pkl"
-    run(mode, baseline, train_data, test_data, result, predictions, model, empath)
+    args = create_arg_parser().parse_args()
+    run(args.mode, args.baseline, args.train_data, args.test_data, args.result, args.predictions, args.model,
+        args.empath)
 
 
 if __name__ == '__main__':
