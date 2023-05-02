@@ -12,4 +12,6 @@ dependencies:
   - spacy
   - scikit-learn
   - emoji
-  - contractions
+  - pip
+  - pip:
+    - contractions
