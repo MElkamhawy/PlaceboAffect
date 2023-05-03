@@ -1,15 +1,18 @@
 import numpy as np
-from nltk.tokenize import TweetTokenizer
-import gensim
-from gensim.models import Word2Vec
 from empath import Empath
+from gensim.models import Word2Vec
+from nltk.tokenize import TweetTokenizer
 from sklearn.feature_extraction.text import CountVectorizer
 
 lexicon = Empath()
+BOW_FEATURE = "bag_of_words"
+W2V_FEATURE = "word2vec"
+EMPATH_FEATURE = "empath"
+NGRAM_FEATURE = "n_grams"
 
 
 class Vector:
-    def __init__(self, name, text):
+    def __init__(self, name, text, config):
         """
         Initializes the Vector object.
         Args:
@@ -17,29 +20,31 @@ class Vector:
             vectorizer: A Word2Vec model.
             text: A numpy array of strings.
             vector: A numpy array of vectors (numpy arrays).
+            features_config: A dictionary containing the configuration for the features.
         """
         self.name = name
         self.text = text
         self.vectorizer = None
         self.vector = None
+        self.features_config = config
 
-    def process_features(self, baseline=False, vectorizer=None, empath=False):
+    def process_features(self, vectorizer=None):
         """
         Calculates and concatenates feature vectors given an array of input text.
         Args:
-            baseline: A boolean variable indicating whether or not to use the baseline model.
             vectorizer: A Word2Vec model.
-            empath: A boolean variable indicating whether to calculate empath scores.
         """
-        if baseline:
+        text_vectors = None
+        upgraded_text = text_tokenize = [self._tokenize(element) for element in self.text]
+
+        if self.features_config[BOW_FEATURE]:
             text_vectors = self._apply_bow(self.text, vectorizer)
-        else:
-            text_tokenize = [self._tokenize(element) for element in self.text]
-            text_vectors = self._apply_w2v(text_tokenize, vectorizer)
-            # If empath, apply empath to text and concatenate the resulting empath vector to the corresponding embedding
-            if empath:
-                empath_vectors = [self._calculate_empath(element) for element in self.text]
-                text_vectors = np.concatenate((text_vectors, empath_vectors), axis=1)
+        if self.features_config[NGRAM_FEATURE]:
+            upgraded_text = self._apply_ngrams(self.text, tokenized_corpus=text_tokenize)
+        if self.features_config[W2V_FEATURE]:
+            text_vectors = self._apply_w2v(upgraded_text, vectorizer=vectorizer, text=text_tokenize)
+        if self.features_config[EMPATH_FEATURE]:
+            text_vectors = self._apply_empath(text_vectors)
         self.vector = text_vectors
 
     def _tokenize(self, text):
@@ -54,6 +59,17 @@ class Vector:
         tokens = tweet_tokenizer.tokenize(text)
         return tokens
 
+    def _apply_empath(self, text_vectors):
+        """
+        Calculates empath scores for the input text and concatenates the resulting vector to the input text vectors.
+        Args:
+            text_vectors: A numpy array of vectors.
+        Returns:
+            A numpy array of vectors.
+        """
+        empath_vectors = [self._calculate_empath(element) for element in self.text]
+        return np.concatenate((text_vectors, empath_vectors), axis=1)
+
     def _calculate_empath(self, text):
         """
         Calculates scores for 194 lexical categories for a given text string.
@@ -65,8 +81,17 @@ class Vector:
         empath_dict = lexicon.analyze(text, normalize=True)
         empath_values = np.array(list(empath_dict.values()))
         return empath_values
+    
+    def _apply_ngrams(self, text, tokenized_corpus):
+        # Create bi-grams and tri-grams
+        vectorizer = CountVectorizer(ngram_range=(2, 4), analyzer="word")
+        ngrams = vectorizer.fit_transform(text)
+        ngram_feature_names = vectorizer.get_feature_names()
 
-    def _apply_w2v(self, text, vectorizer=None):
+        # Train Word2Vec on tokenized_corpus and n-grams
+        return tokenized_corpus + [ngram.split() for ngram in ngram_feature_names]
+
+    def _apply_w2v(self, tokenized_corpus, vectorizer=None, text=None):
         """
         Uses a Word2Vec model to obtain the embedding for each token in the input text,
         then averages the embeddings for the entire text.
@@ -77,17 +102,13 @@ class Vector:
             A numpy array of vectors.
         """
 
-        # Use an existing vectorizer for the dev data.
+        w2v_model = Word2Vec(
+                    tokenized_corpus, min_count=1, vector_size=100, window=5
+                )
         if vectorizer is None:
-            if self.name == "train":
-                vectorizer = gensim.models.Word2Vec(
-                    text, min_count=1, vector_size=100, window=5
-                )
-                self.vectorizer = vectorizer
-            else:
-                raise ValueError(
-                    "vectorizer cannot be None when self.name is not 'train'"
-                )
+            self.vectorizer = w2v_model
+        else:
+            self.vectorizer = vectorizer
 
         # Apply the Word2Vec model to each word, then average for the entire text
         vectors = []
@@ -95,7 +116,7 @@ class Vector:
             temp_vectors = []
             for word in tweet:
                 try:
-                    temp_vectors.append(vectorizer.wv[word])
+                    temp_vectors.append(self.vectorizer.wv[word])
                 except:
                     temp_vectors.append([0] * 100)
             average_vector = np.mean(temp_vectors, axis=0)

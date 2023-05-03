@@ -11,3 +11,4 @@ dependencies:
   - nltk
   - spacy
   - scikit-learn
+  - pyyaml
