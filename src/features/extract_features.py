@@ -3,12 +3,16 @@ from empath import Empath
 from gensim.models import Word2Vec
 from nltk.tokenize import TweetTokenizer
 from sklearn.feature_extraction.text import CountVectorizer
+from textblob import TextBlob
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
+from sklearn.preprocessing import StandardScaler
 
 lexicon = Empath()
 BOW_FEATURE = "bag_of_words"
 W2V_FEATURE = "word2vec"
 EMPATH_FEATURE = "empath"
 NGRAM_FEATURE = "n_grams"
+SENTIMENT_FEATURE = "sentiment"
 
 
 class Vector:
@@ -45,6 +49,9 @@ class Vector:
             text_vectors = self._apply_w2v(upgraded_text, vectorizer=vectorizer, text=text_tokenize)
         if self.features_config[EMPATH_FEATURE]:
             text_vectors = self._apply_empath(text_vectors)
+        if self.features_config[SENTIMENT_FEATURE]:
+            text_vectors = self._apply_vader_sentiment(text_vectors)
+        
         self.vector = text_vectors
 
     def _tokenize(self, text):
@@ -69,6 +76,52 @@ class Vector:
         """
         empath_vectors = [self._calculate_empath(element) for element in self.text]
         return np.concatenate((text_vectors, empath_vectors), axis=1)
+    
+    def _apply_sentiment(self, text_vectors):
+        """
+        Calculates sentiment scores for the input text and concatenates the resulting vector to the input text vectors.
+        Args:
+            text_vectors: A numpy array of vectors.
+        Returns:
+            A numpy array of vectors.
+        """
+        sentiment_vectors = [self._calculate_sentiment(element) for element in self.text]
+        return np.concatenate((text_vectors, sentiment_vectors), axis=1)
+    
+    def _calculate_sentiment(self, text):
+        """
+        Calculates sentiment scores for the input text.
+        Args:
+            text: A string of input text.
+        Returns:
+            A list of values corresponding to each sentiment score.
+        """
+        sentiment_dict = TextBlob(text).sentiment
+        sentiment_values = np.array([sentiment_dict.polarity, sentiment_dict.subjectivity])
+        return sentiment_values
+    
+    def _calculate_vader_sentiment(self, text):
+        """
+        Calculates sentiment scores for the input text.
+        Args:
+            text: A string of input text.
+        Returns:
+            A list of values corresponding to each sentiment score.
+        """
+        sentiment_dict = SentimentIntensityAnalyzer().polarity_scores(text)
+        sentiment_values = np.array([sentiment_dict["neg"], sentiment_dict["neu"], sentiment_dict["pos"], sentiment_dict["compound"]])
+        return sentiment_values
+    
+    def _apply_vader_sentiment(self, text_vectors):
+        """
+        Calculates sentiment scores for the input text and concatenates the resulting vector to the input text vectors.
+        Args:
+            text_vectors: A numpy array of vectors.
+        Returns:
+            A numpy array of vectors.
+        """
+        sentiment_vectors = [self._calculate_vader_sentiment(element) for element in self.text]
+        return np.concatenate((text_vectors, sentiment_vectors), axis=1)
 
     def _calculate_empath(self, text):
         """
@@ -84,9 +137,9 @@ class Vector:
     
     def _apply_ngrams(self, text, tokenized_corpus):
         # Create bi-grams and tri-grams
-        vectorizer = CountVectorizer(ngram_range=(2, 4), analyzer="word")
+        vectorizer = CountVectorizer(ngram_range=(1, 4), analyzer="word")
         ngrams = vectorizer.fit_transform(text)
-        ngram_feature_names = vectorizer.get_feature_names()
+        ngram_feature_names = vectorizer.get_feature_names_out()
 
         # Train Word2Vec on tokenized_corpus and n-grams
         return tokenized_corpus + [ngram.split() for ngram in ngram_feature_names]

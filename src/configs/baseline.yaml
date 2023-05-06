@@ -1,4 +1,5 @@
-bag_of_words: false
-word2vec: true
+bag_of_words: true
+word2vec: false
 empath: false
 n_grams: true
+sentiment: false

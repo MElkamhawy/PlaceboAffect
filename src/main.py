@@ -66,11 +66,11 @@ def create_arg_parser():
                                  default='../data/train/en/hateval2019_en_train.csv')
     argument_parser.add_argument('--test-data', help='Testing Data File Path',
                                  default='../data/dev/en/hateval2019_en_dev.csv')
-    argument_parser.add_argument('--model', help='Model File Path', default='../models/D2/svm_en_{sys}.pkl')
+    argument_parser.add_argument('--model', help='Model File Path', default='../models/D3/svm_{sys}.pkl')
     argument_parser.add_argument('--config', help='Config File Path', default='configs/baseline.yaml')
-    argument_parser.add_argument('--result', help='Output File Path', default='../results/res_en_svm_{sys}.txt')
+    argument_parser.add_argument('--result', help='Output File Path', default='../results/D3_scores{sys}.out')
     argument_parser.add_argument('--predictions', help='Predictions File Path',
-                                 default='../outputs/D2/pred_en_svm_{sys}.txt')
+                                 default='../outputs/D3/pred_{sys}.txt')
     return argument_parser
 
 
@@ -105,7 +105,7 @@ def run(mode, training_data_file, test_data_file, result_file, predictions_file,
     param result_file: path to result file (str)
     param predictions_file: path to predictions file (str)
     param model_file: path to model file (str)
-    param config: configuration file (dict)
+    param config: path to config file (str)
     return: Void
     """
     # Validations
@@ -120,6 +120,18 @@ def run(mode, training_data_file, test_data_file, result_file, predictions_file,
         eprint("Model file does not exist!")
         sys.exit(1)
 
+    if not os.path.exists(config):
+        eprint("Config file does not exist!")
+        sys.exit(1)
+    features_config = read_yaml_config(config)
+
+
+    # Adjust File Paths 
+    config_name = os.path.basename(config).split('.')[0]
+    model_file = model_file.format(sys=config_name)
+    predictions_file = predictions_file.format(sys=config_name)
+    result_file = result_file.format(sys='_' + config_name if config_name != 'baseline' else "")
+
     # Load Data from CSV and store as preprocess.Data object
     data_train = preprocess.Data.from_csv(training_data_file, name=TRAIN_DATASET_NAME)
     data_dev = preprocess.Data.from_csv(test_data_file, name=DEV_DATASET_NAME)
@@ -132,8 +144,8 @@ def run(mode, training_data_file, test_data_file, result_file, predictions_file,
 
     # Extract Features from Data
 
-    train_vector = extract_features.Vector(name=TRAIN_DATASET_NAME, text=data_train.text, config=config)
-    dev_vector = extract_features.Vector(name=DEV_DATASET_NAME, text=data_dev.text, config=config)
+    train_vector = extract_features.Vector(name=TRAIN_DATASET_NAME, text=data_train.text, config=features_config)
+    dev_vector = extract_features.Vector(name=DEV_DATASET_NAME, text=data_dev.text, config=features_config)
     train_vector.process_features()
     dev_vector.process_features(vectorizer=train_vector.vectorizer)
     clf = None
@@ -187,12 +199,7 @@ def main():
     np.random.seed(5)
     random.seed(5)
     args = create_arg_parser().parse_args()
-
-    if not os.path.exists(args.config):
-        eprint("Config file does not exist!")
-        sys.exit(1)
-    config = read_yaml_config(args.config)
-    run(args.mode, args.train_data, args.test_data, args.result, args.predictions, args.model, config)
+    run(args.mode, args.train_data, args.test_data, args.result, args.predictions, args.model, args.config)
 
 
 

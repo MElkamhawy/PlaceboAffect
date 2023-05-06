@@ -1,0 +1,20 @@
+name: PlaceboAffect
+channels:
+  - anaconda
+  - conda-forge
+dependencies:
+  - python=3.9
+  - numpy
+  - pandas
+  - empath
+  - gensim
+  - nltk
+  - spacy
+  - scikit-learn
+  - pyyaml  
+  - emoji
+  - pip
+  - pip:
+    - contractions
+  - TextBlob
+  - vaderSentiment
