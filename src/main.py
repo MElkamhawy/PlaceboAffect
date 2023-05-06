@@ -59,7 +59,7 @@ def output_lines(lines, path):
 
 
 def create_arg_parser():
-    argument_parser = ArgumentParser(description='D2 for PlaceboAffect - Course Ling 573.')
+    argument_parser = ArgumentParser(description='D3 for PlaceboAffect - Course Ling 573.')
     argument_parser.add_argument('--mode', type=str, choices=['train', 'test'], default='train',
                                  help='Train or test the model')
     argument_parser.add_argument('--train-data', help='Training Data File Path',
