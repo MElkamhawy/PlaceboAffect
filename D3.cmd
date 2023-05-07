@@ -1,5 +1,5 @@
 universe            = vanilla
-executable          = src/test.sh
+executable          = scripts/test.sh
 myfiles             = ./
 getenv              = true
 error               = error.err
