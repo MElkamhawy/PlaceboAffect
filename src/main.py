@@ -6,6 +6,8 @@ import sys
 from argparse import ArgumentParser
 import numpy as np
 import pandas as pd
+import yaml
+
 
 import nltk
 from sklearn.metrics import accuracy_score, classification_report
@@ -32,6 +34,17 @@ def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
 
+def read_yaml_config(filename):
+    """
+    Read yaml config file.
+
+    param filename: path to yaml file (str)
+    return: config (dict)
+    """
+    with open(filename, 'r') as file:
+        return yaml.safe_load(file)
+
+
 def output_lines(lines, path):
     """
     Print results to file.
@@ -46,19 +59,18 @@ def output_lines(lines, path):
 
 
 def create_arg_parser():
-    argument_parser = ArgumentParser(description='D2 for PlaceboAffect - Course Ling 573.')
+    argument_parser = ArgumentParser(description='D3 for PlaceboAffect - Course Ling 573.')
     argument_parser.add_argument('--mode', type=str, choices=['train', 'test'], default='train',
                                  help='Train or test the model')
-    argument_parser.add_argument('--baseline', help='Baseline Model', action='store_true', default=False)
     argument_parser.add_argument('--train-data', help='Training Data File Path',
                                  default='../data/train/en/hateval2019_en_train.csv')
     argument_parser.add_argument('--test-data', help='Testing Data File Path',
                                  default='../data/dev/en/hateval2019_en_dev.csv')
-    argument_parser.add_argument('--model', help='Model File Path', default='../models/D2/svm_en_{sys}.pkl')
-    argument_parser.add_argument('--empath', help='Empath Feature', action='store_true', default=False)
-    argument_parser.add_argument('--result', help='Output File Path', default='../results/res_en_svm_{sys}.txt')
+    argument_parser.add_argument('--model', help='Model File Path', default='../models/D3/svm_{sys}.pkl')
+    argument_parser.add_argument('--config', help='Config File Path', default='configs/baseline.yaml')
+    argument_parser.add_argument('--result', help='Output File Path', default='../results/D3_scores{sys}.out')
     argument_parser.add_argument('--predictions', help='Predictions File Path',
-                                 default='../outputs/D2/pred_en_svm_{sys}.txt')
+                                 default='../outputs/D3/pred_{sys}.txt')
     return argument_parser
 
 
@@ -83,18 +95,17 @@ def evaluate(gold, pred):
     return acc_hs, p_hs, r_hs, f1_hs
 
 
-def run(mode, baseline, training_data_file, test_data_file, result_file, predictions_file, model_file, empath):
+def run(mode, training_data_file, test_data_file, result_file, predictions_file, model_file, config):
     """
     This is the main function that will be running the different steps for Affect Recognition System.
 
     param mode: train or test (str)
-    param baseline: whether to use baseline model or not (bool)
     param training_data_file: path to training data file (str)
     param test_data_file: path to test data file (str)
     param result_file: path to result file (str)
     param predictions_file: path to predictions file (str)
     param model_file: path to model file (str)
-    param empath: whether to use empath features or not (bool)
+    param config: path to config file (str)
     return: Void
     """
     # Validations
@@ -105,14 +116,21 @@ def run(mode, baseline, training_data_file, test_data_file, result_file, predict
         eprint("Test data file does not exist!")
         sys.exit(1)
 
-    # Adjust File Paths 
-    model_file = model_file.format(sys="baseline" if baseline else "advanced")
-    predictions_file = predictions_file.format(sys="baseline" if baseline else "advanced")
-    result_file = result_file.format(sys="baseline" if baseline else "advanced")
-
     if mode is TEST_MODE and not os.path.exists(model_file):
         eprint("Model file does not exist!")
         sys.exit(1)
+
+    if not os.path.exists(config):
+        eprint("Config file does not exist!")
+        sys.exit(1)
+    features_config = read_yaml_config(config)
+
+
+    # Adjust File Paths 
+    config_name = os.path.basename(config).split('.')[0]
+    model_file = model_file.format(sys=config_name)
+    predictions_file = predictions_file.format(sys=config_name)
+    result_file = result_file.format(sys='_' + config_name if config_name != 'baseline' else "")
 
     # Load Data from CSV and store as preprocess.Data object
     data_train = preprocess.Data.from_csv(training_data_file, name=TRAIN_DATASET_NAME)
@@ -125,12 +143,13 @@ def run(mode, baseline, training_data_file, test_data_file, result_file, predict
     print('Data Preprocessing Complete')
 
     # Extract Features from Data
-    train_vector = extract_features.Vector(name=TRAIN_DATASET_NAME, text=data_train.text)
-    dev_vector = extract_features.Vector(name=DEV_DATASET_NAME, text=data_dev.text)
-    train_vector.process_features(baseline, empath=empath)
-    dev_vector.process_features(baseline, vectorizer=train_vector.vectorizer, empath=empath)
+
+    train_vector = extract_features.Vector(name=TRAIN_DATASET_NAME, text=data_train.text, config=features_config)
+    dev_vector = extract_features.Vector(name=DEV_DATASET_NAME, text=data_dev.text, config=features_config)
+    train_vector.process_features()
+    dev_vector.process_features(vectorizer=train_vector.vectorizer)
     clf = None
-    print('Feature Extraction Complete')
+    print('Feature Extraction Complete')    
 
     if mode == TRAIN_MODE:
         # Train Model
@@ -180,8 +199,8 @@ def main():
     np.random.seed(5)
     random.seed(5)
     args = create_arg_parser().parse_args()
-    run(args.mode, args.baseline, args.train_data, args.test_data, args.result, args.predictions, args.model,
-        args.empath)
+    run(args.mode, args.train_data, args.test_data, args.result, args.predictions, args.model, args.config)
+
 
 
 if __name__ == '__main__':

@@ -120,7 +120,7 @@ class Model:
 
         # loop through all combinations of parameters,
         for combination in params:
-            model = self._fit_sklearn( hyp_params=combination, text=text, label=label)
+            model = self._fit_sklearn(hyp_params=combination, text=text, label=label)
             preds = model.predict(tuning[0])
             p_hs, r_hs, f1_hs, support = precision_recall_fscore_support(preds, tuning[1], average="macro")
             if f1_hs > best_f1:
