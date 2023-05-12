@@ -142,7 +142,7 @@ def run(mode, training_data_file, dev_data_file, test_data_file, result_file, pr
     # Load Data from CSV and store as preprocess.Data object
     data_train = preprocess.Data.from_csv(training_data_file, name=TRAIN_DATASET_NAME)
     data_dev = preprocess.Data.from_csv(dev_data_file, name=DEV_DATASET_NAME)
-    data_test = preprocess.Data.from_csv(test_data_file, name=DEV_DATASET_NAME)
+    data_test = preprocess.Data.from_csv(test_data_file, name=TEST_DATASET_NAME)
     print('Data Load Complete')
 
     # Preprocess Data
