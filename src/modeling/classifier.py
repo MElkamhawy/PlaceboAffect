@@ -52,6 +52,7 @@ class Model:
 
         if algorithm == 'SVM':
             self.model = self._tune_sklearn(text=text, label=label, tuning=tuning)
+            print(self.model.get_params())
         else:
             ValueError('Model must be SVM')
 
