@@ -7,7 +7,7 @@ from argparse import ArgumentParser
 import numpy as np
 import pandas as pd
 import yaml
-
+import spacy
 import nltk
 from sklearn.metrics import accuracy_score, classification_report
 from sklearn.metrics import precision_recall_fscore_support
@@ -64,7 +64,7 @@ def create_arg_parser():
     argument_parser = ArgumentParser(description='D3 for PlaceboAffect - Course Ling 573.')
     argument_parser.add_argument('--mode', type=str, choices=['train', 'test'], default='train',
                                  help='Train or test the model')
-    argument_parser.add_argument('--task', type=str, choices=['primary', 'adapatation'], default='primary',
+    argument_parser.add_argument('--task', type=str, choices=['primary', 'adaptation'], default='primary',
                                  help='Task to perform (primary or adaptation)')
     argument_parser.add_argument('--train-data', help='Training Data File Path',
                                  default='../data/train/en/hateval2019_en_train.csv')
@@ -150,33 +150,25 @@ def run(mode, task, training_data_file, dev_data_file, test_data_file, result_fi
     data_test = preprocess.Data.from_csv(test_data_file, name=TEST_DATASET_NAME)
     print('Data Load Complete')
 
+    language = PRIMARY_TASK_LANGUAGE
+    nlp = spacy.load("en_core_web_sm", disable=["ner", "parser"])
+       
+    if task == "adaptation":
+        print("Performing adaptation task")
+        language = ADAPTATION_TASK_LANGUAGE
+        nlp = spacy.load("es_core_news_sm", disable=["ner", "parser"])
+        
     # Preprocess Data
-    if task == "primary":
-        data_train.process(text_name=TEXT_COL, target_name=TARGET_LABEL_COL, language=PRIMARY_TASK_LANGUAGE)
-        data_dev.process(text_name=TEXT_COL, target_name=TARGET_LABEL_COL, language=PRIMARY_TASK_LANGUAGE)
-        data_test.process(text_name=TEXT_COL, target_name=TARGET_LABEL_COL, language=PRIMARY_TASK_LANGUAGE)
-    elif task == "adaptation":
-        data_train.process(text_name=TEXT_COL, target_name=TARGET_LABEL_COL, language=ADAPTATION_TASK_LANGUAGE)
-        data_dev.process(text_name=TEXT_COL, target_name=TARGET_LABEL_COL, language=ADAPTATION_TASK_LANGUAGE)
-        data_test.process(text_name=TEXT_COL, target_name=TARGET_LABEL_COL, language=ADAPTATION_TASK_LANGUAGE)
-    else:
-        eprint('Invalid task specified.')
-        sys.exit(1)
-    print(data_train.text[:10])
+    data_train.process(text_name=TEXT_COL, target_name=TARGET_LABEL_COL, language=language, nlp=nlp)
+    data_dev.process(text_name=TEXT_COL, target_name=TARGET_LABEL_COL, language=language, nlp=nlp)
+    data_test.process(text_name=TEXT_COL, target_name=TARGET_LABEL_COL, language=language, nlp=nlp)
     print('Data Preprocessing Complete')
 
     # Extract Features from Data
-    if task == "primary":
-        train_vector = extract_features.Vector(name=TRAIN_DATASET_NAME, text=data_train.text, config=features_config)
-        dev_vector = extract_features.Vector(name=DEV_DATASET_NAME, text=data_dev.text, config=features_config)
-        test_vector = extract_features.Vector(name=TEST_DATASET_NAME, text=data_test.text, config=features_config)
-    elif task == "adaptation":
-        train_vector = extract_features.Vector(name=TRAIN_DATASET_NAME, text=data_train.text, config=features_config, language=ADAPTATION_TASK_LANGUAGE)
-        dev_vector = extract_features.Vector(name=DEV_DATASET_NAME, text=data_dev.text, config=features_config, language=ADAPTATION_TASK_LANGUAGE)
-        test_vector = extract_features.Vector(name=TEST_DATASET_NAME, text=data_test.text, config=features_config, language=ADAPTATION_TASK_LANGUAGE)
-    else:
-        eprint('Invalid task specified.')
-        sys.exit(1)
+    train_vector = extract_features.Vector(name=TRAIN_DATASET_NAME, text=data_train.text, config=features_config, language=language, nlp=nlp)
+    dev_vector = extract_features.Vector(name=DEV_DATASET_NAME, text=data_dev.text, config=features_config, language=language, nlp=nlp)
+    test_vector = extract_features.Vector(name=TEST_DATASET_NAME, text=data_test.text, config=features_config, language=language, nlp=nlp)
+   
     train_vector.process_features()
     dev_vector.process_features(vectorizer=train_vector.vectorizer)
     test_vector.process_features(vectorizer=train_vector.vectorizer)

@@ -3,7 +3,6 @@ import pandas as pd
 import numpy as np
 from nltk.corpus import stopwords
 from unidecode import unidecode
-import spacy
 import emoji
 import contractions
 
@@ -60,7 +59,7 @@ class Data:
         """
         return cls(pd.read_csv(train_path), name)
 
-    def process(self, text_name, target_name, language="en"):
+    def process(self, text_name, target_name, language, nlp):
         """
         Process the text data and target labels.
         Args:
@@ -68,12 +67,7 @@ class Data:
             target_name (str): The name of the target column in the raw data.
         """
         self.language = language
-        if self.language == "en":
-            self.nlp = spacy.load("en_core_web_sm", disable=["ner", "parser"])
-        elif self.language == "es":
-            self.nlp = spacy.load("es_core_news_sm", disable=["ner", "parser"])
-        else:
-            raise ValueError(f"Unsupported language: {self.language}")
+        self.nlp = nlp
         self.label = self._process_target(target_name)
         self.text = self._process_text(text_name)
 
@@ -145,12 +139,7 @@ class Data:
             stop_words = set(stopwords.words("spanish"))
         else:
             raise ValueError(f"Unsupported language: {self.language}")
-
-        return [
-            token
-            for token in tokens
-            if not token in stop_words or token in self.negation_words
-        ]
+        return [token for token in tokens if token not in stop_words]
 
     def _extract_hashtags_and_mentions(self, text):
         """
@@ -314,7 +303,7 @@ class Data:
         tokens = self._handle_negation(tokens)
         if self.remove_stopwords:
             tokens = self._remove_stopwords(tokens)
-        text = " ".join(tokens)
+        text = " ".join(tokens).strip()
         return text
 
     def _process_line(self, original_text):

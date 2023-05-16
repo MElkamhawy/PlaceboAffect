@@ -6,7 +6,6 @@ from sklearn.feature_extraction.text import CountVectorizer
 from textblob import TextBlob
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from sklearn.preprocessing import StandardScaler
-import spacy 
 
 lexicon = Empath()
 BOW_FEATURE = "bag_of_words"
@@ -17,7 +16,7 @@ SENTIMENT_FEATURE = "sentiment"
 
 
 class Vector:
-    def __init__(self, name, text, config, language="en"):
+    def __init__(self, name, text, config, language, nlp):
         """
         Initializes the Vector object.
         Args:
@@ -30,19 +29,11 @@ class Vector:
         self.name = name
         self.text = text
         self.language = language
-        self.nlp = self.load_spacy_model()
+        self.nlp = nlp
         self.vectorizer = None
         self.vector = None
         self.features_config = config
 
-    def load_spacy_model(self):
-        if self.language == "en":
-            return spacy.load("en_core_web_sm", disable=["ner", "parser"])
-        elif self.language == "es":
-            return spacy.load("es_core_news_sm", disable=["ner", "parser"])
-        else:
-            raise ValueError(f"Unsupported language: {self.language}")
-        
     def process_features(self, vectorizer=None):
         """
         Calculates and concatenates feature vectors given an array of input text.
@@ -67,14 +58,15 @@ class Vector:
 
     def _tokenize(self, text):
         """
-        Tokenizes the input text via spaCy.
+        Tokenizes the input text via spaCy
         Args:
             text: A string of input text.
         Returns:
             A list of tokens.
         """
         doc = self.nlp(str(text))
-        return [token.text for token in doc]
+        tokens = [token.text for token in doc]
+        return tokens
 
     def _apply_empath(self, text_vectors):
         """
@@ -217,3 +209,4 @@ class Vector:
             text_matrix = vectorizer.transform(text)
 
         return text_matrix
+    
