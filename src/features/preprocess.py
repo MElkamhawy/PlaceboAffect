@@ -2,8 +2,8 @@ import re
 import pandas as pd
 import numpy as np
 from nltk.corpus import stopwords
-from unidecode import unidecode
-import spacy
+from nltk.tokenize import TweetTokenizer
+from nltk.stem import WordNetLemmatizer
 import emoji
 import contractions
 
@@ -12,16 +12,12 @@ class Data:
     def __init__(self, raw_df, name):
         self.raw_df = raw_df
         self.name = name
-        self.language = None
-        self.nlp = None
         self.text = None
         self.label = None
         self.remove_stopwords = False
         self.remove_numbers = False
         self.remove_mentions = False
-        self.remove_accents = False
         self.negation_words = [
-            # English negation words
             "no",
             "not",
             "never",
@@ -37,15 +33,6 @@ class Data:
             "didnt",
             "barely",
             "without",
-            # Spanish negation words
-            "nunca",
-            "nada",
-            "nadie",
-            "ni",
-            "ninguno",
-            "ninguna",
-            "tampoco",
-            "sin",
         ]
 
     @classmethod
@@ -60,20 +47,13 @@ class Data:
         """
         return cls(pd.read_csv(train_path), name)
 
-    def process(self, text_name, target_name, language="en"):
+    def process(self, text_name, target_name):
         """
         Process the text data and target labels.
         Args:
             text_name (str): The name of the text column in the raw data.
             target_name (str): The name of the target column in the raw data.
         """
-        self.language = language
-        if self.language == "en":
-            self.nlp = spacy.load("en_core_web_sm", disable=["ner", "parser"])
-        elif self.language == "es":
-            self.nlp = spacy.load("es_core_news_sm", disable=["ner", "parser"])
-        else:
-            raise ValueError(f"Unsupported language: {self.language}")
         self.label = self._process_target(target_name)
         self.text = self._process_text(text_name)
 
@@ -119,16 +99,28 @@ class Data:
             processed_words.append(word)
         return processed_words
 
-    def _tokenize_and_lemmatize(self, text):
+    def _tokenize(self, text):
         """
-        Tokenize and lemmatize the input string using spaCy
+        Tokenize the input string using nltk.TweetTokenizer()
         Args:
             text (str): Input string to tokenize
         Returns:
             list: A list of lemmatized tokens
         """
-        doc = self.nlp(text)
-        lemmatized_tokens = [token.lemma_ for token in doc]
+        tweet_tokenizer = TweetTokenizer()
+        tokens = tweet_tokenizer.tokenize(text)
+        return tokens
+
+    def _lemmatize(self, tokens):
+        """
+        Lemmatize the input tokens.
+        Args:
+            tokens (list): A list of tokens to lemmatize.
+        Returns:
+            list: A list of lemmatized tokens.
+        """
+        lemmatizer = WordNetLemmatizer()
+        lemmatized_tokens = [lemmatizer.lemmatize(token) for token in tokens]
         return lemmatized_tokens
 
     def _remove_stopwords(self, tokens):
@@ -139,13 +131,7 @@ class Data:
         Return:
             list: A list of tokens with stopwords removed.
         """
-        if self.language == "en":
-            stop_words = set(stopwords.words("english"))
-        elif self.language == "es":
-            stop_words = set(stopwords.words("spanish"))
-        else:
-            raise ValueError(f"Unsupported language: {self.language}")
-
+        stop_words = set(stopwords.words("english"))
         return [
             token
             for token in tokens
@@ -197,10 +183,7 @@ class Data:
         Return:
             str: The text with emojis replaced with words.
         """
-        if self.language == "en":
-            text = emoji.demojize(text)
-        elif self.language == "es":
-            text = emoji.demojize(text, language="es")
+        text = emoji.demojize(text)
         text = re.sub(r"_", " ", text)
         return text
 
@@ -248,14 +231,13 @@ class Data:
         """
         text = self._extract_hashtags_and_mentions(original_text)
         text = self._replace_emoji_with_words(text)
-        if self.language == "en":
-            text = self._replace_curse_words(text)
-            text = self._expand_contractions(text)
+        text = self._replace_curse_words(text)
+        text = self._expand_contractions(text)
         return text
 
-    def _clean_en_text(self, original_text):
+    def _clean_text(self, original_text):
         """
-        Cleans the English text by removing URLs, HTML characters, unicode characters, special characters,
+        Cleans the text by removing URLs, HTML characters, unicode characters, special characters,
         and extra whitespaces. Can also remove numbers if specified.
         Args:
             original_text (str): The raw text string to be cleaned.
@@ -281,27 +263,6 @@ class Data:
         )  # Remove non-word characters and extra whitespaces
         return text
 
-    def _clean_es_text(self, original_text):
-        """
-        Cleans the Spanish text by removing URLs, HTML characters, punctuation,
-        and extra whitespaces. Can also remove numbers and accents if specified.
-        Args:
-            original_text (str): The raw text string to be cleaned.
-        Return:
-            str: The cleaned text.
-        """
-        text = str(original_text).lower()
-        text = re.sub(r"https?://\S+", "", text)  # Remove URLs
-        text = re.sub(r"&[^;\s]+;", "", text)  # Remove html characters LIKE &amp;
-        if self.remove_numbers:
-            text = re.sub(r"\d+", "", text)
-        if self.remove_accents:
-            text = unidecode(text)
-        text = re.sub(
-            r"[\W\s]+", " ", text
-        )  # Remove non-word characters and extra whitespaces
-        return text
-
     def _prepare_text(self, original_text):
         """
         Prepares the given text by tokenizing, lemmatizing, handling negation, and removing stop words(optional).
@@ -310,11 +271,12 @@ class Data:
         Return:
             str: The cleaned and prepared text.
         """
-        tokens = self._tokenize_and_lemmatize(original_text)
-        tokens = self._handle_negation(tokens)
+        tokens = self._tokenize(original_text)
+        tokens_with_negation_handled = self._handle_negation(tokens)
+        lemmatized_tokens = self._lemmatize(tokens_with_negation_handled)
         if self.remove_stopwords:
-            tokens = self._remove_stopwords(tokens)
-        text = " ".join(tokens)
+            lemmatized_tokens = self._remove_stopwords(lemmatized_tokens)
+        text = " ".join(lemmatized_tokens)
         return text
 
     def _process_line(self, original_text):
@@ -326,13 +288,8 @@ class Data:
             str: The cleaned and prepared text.
         """
         text = self._extract_useful_information(original_text)
-        if self.language == "en":
-            clean_text = self._clean_en_text(text)
-        elif self.language == "es":
-            clean_text = self._clean_es_text(text)
-        else:
-            raise ValueError(f"Unsupported language: {self.language}")
+        clean_text = self._clean_text(text)
         processed_text = self._prepare_text(clean_text)
         if processed_text == "":
             processed_text = str(original_text).lower()
-        return processed_text.strip()
+        return processed_text
