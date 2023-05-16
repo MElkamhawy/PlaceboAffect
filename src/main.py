@@ -23,6 +23,8 @@ TRAIN_DATASET_NAME = 'train'
 DEV_DATASET_NAME = 'dev'
 TEST_DATASET_NAME = 'test'
 CLASSIFICATION_ALGORITHM = 'SVM'
+PRIMARY_TASK_LANGUAGE = 'en'
+ADAPTATION_TASK_LANGUAGE = 'es'
 
 
 def eprint(*args, **kwargs):
@@ -62,6 +64,8 @@ def create_arg_parser():
     argument_parser = ArgumentParser(description='D3 for PlaceboAffect - Course Ling 573.')
     argument_parser.add_argument('--mode', type=str, choices=['train', 'test'], default='train',
                                  help='Train or test the model')
+    argument_parser.add_argument('--task', type=str, choices=['primary', 'adapatation'], default='primary',
+                                 help='Task to perform (primary or adaptation)')
     argument_parser.add_argument('--train-data', help='Training Data File Path',
                                  default='../data/train/en/hateval2019_en_train.csv')
     argument_parser.add_argument('--dev-data', help='Development Data File Path',
@@ -97,11 +101,12 @@ def evaluate(gold, pred):
     return acc_hs, p_hs, r_hs, f1_hs
 
 
-def run(mode, training_data_file, dev_data_file, test_data_file, result_file, predictions_file, model_file, config):
+def run(mode, task, training_data_file, dev_data_file, test_data_file, result_file, predictions_file, model_file, config):
     """
     This is the main function that will be running the different steps for Affect Recognition System.
 
     param mode: train or test (str)
+    param task: primary or adaptation (str)
     param training_data_file: path to training data file (str)
     param dev_data_file: path to dev data file (str)
     param test_data_file: path to test data file (str)
@@ -146,9 +151,17 @@ def run(mode, training_data_file, dev_data_file, test_data_file, result_file, pr
     print('Data Load Complete')
 
     # Preprocess Data
-    data_train.process(text_name=TEXT_COL, target_name=TARGET_LABEL_COL)
-    data_dev.process(text_name=TEXT_COL, target_name=TARGET_LABEL_COL)
-    data_test.process(text_name=TEXT_COL, target_name=TARGET_LABEL_COL)
+    if task == "primary":
+        data_train.process(text_name=TEXT_COL, target_name=TARGET_LABEL_COL, language=PRIMARY_TASK_LANGUAGE)
+        data_dev.process(text_name=TEXT_COL, target_name=TARGET_LABEL_COL, language=PRIMARY_TASK_LANGUAGE)
+        data_test.process(text_name=TEXT_COL, target_name=TARGET_LABEL_COL, language=PRIMARY_TASK_LANGUAGE)
+    elif task == "adaptation":
+        data_train.process(text_name=TEXT_COL, target_name=TARGET_LABEL_COL, language=ADAPTATION_TASK_LANGUAGE)
+        data_dev.process(text_name=TEXT_COL, target_name=TARGET_LABEL_COL, language=ADAPTATION_TASK_LANGUAGE)
+        data_test.process(text_name=TEXT_COL, target_name=TARGET_LABEL_COL, language=ADAPTATION_TASK_LANGUAGE)
+    else:
+        eprint('Invalid task specified.')
+        sys.exit(1)
     print('Data Preprocessing Complete')
 
     # Extract Features from Data
@@ -212,9 +225,10 @@ def main():
     np.random.seed(5)
     random.seed(5)
     args = create_arg_parser().parse_args()
-    run(args.mode, args.train_data, args.dev_data, args.test_data, args.result, args.predictions, args.model,
+    run(args.mode, args.task, args.train_data, args.dev_data, args.test_data, args.result, args.predictions, args.model,
         args.config)
 
 
 if __name__ == '__main__':
     main()
+    

@@ -11,10 +11,11 @@ dependencies:
   - nltk
   - spacy
   - scikit-learn
-  - pyyaml  
+  - pyyaml
   - emoji
   - pip
   - pip:
-    - contractions
+      - contractions
+      - unidecode
   - TextBlob
   - vaderSentiment
