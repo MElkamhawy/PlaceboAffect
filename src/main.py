@@ -23,7 +23,8 @@ TRAIN_DATASET_NAME = 'train'
 DEV_DATASET_NAME = 'dev'
 TEST_DATASET_NAME = 'test'
 CLASSIFICATION_ALGORITHM = 'SVM'
-
+PRIMARY_TASK_LANGUAGE = 'en'
+ADAPTATION_TASK_LANGUAGE = 'es'
 
 def eprint(*args, **kwargs):
     """
@@ -62,6 +63,8 @@ def create_arg_parser():
     argument_parser = ArgumentParser(description='D4 for PlaceboAffect - Course Ling 573.')
     argument_parser.add_argument('--mode', type=str, choices=['train', 'test'], default='train',
                                  help='Train or test the model')
+    argument_parser.add_argument('--task', type=str, choices=['primary', 'adaptation'], default='primary',
+                                 help='Task to perform (primary or adaptation)')
     argument_parser.add_argument('--train-data', help='Training Data File Path',
                                  default='../data/train/en/hateval2019_en_train.csv')
     argument_parser.add_argument('--dev-data', help='Development Data File Path',
@@ -117,16 +120,19 @@ def output_evaluation_results(gold_labels, pred_labels, result_file):
         f.write(f'\nrecall = {r_hs:.2f}')
         f.write(f'\nf1_macro = {f1_hs:.2f}')
 
-def run(mode, training_data_file, dev_data_file, test_data_file, dev_result_file, test_result_file, dev_predictions_file, test_predictions_file, model_file, config):
+def run(mode, task, training_data_file, dev_data_file, test_data_file, dev_result_file, test_result_file, dev_predictions_file, test_predictions_file, model_file, config):
     """
     This is the main function that will be running the different steps for Affect Recognition System.
 
     param mode: train or test (str)
+    param task: param task: primary or adaptation (str)
     param training_data_file: path to training data file (str)
     param dev_data_file: path to dev data file (str)
     param test_data_file: path to test data file (str)
-    param result_file: path to result file (str)
-    param predictions_file: path to predictions file (str)
+    param dev_result_file: path to devtest result file (str)
+    param test_result_file: path to evaltest result file (str)
+    param dev_predictions_file: path to devtest predictions file (str)
+    param test_predictions_file: path to evaltest predictions file (str)
     param model_file: path to model file (str)
     param config: path to config file (str)
     return: Void
@@ -232,7 +238,7 @@ def main():
     np.random.seed(5)
     random.seed(5)
     args = create_arg_parser().parse_args()
-    run(args.mode, args.train_data, args.dev_data, args.test_data, args.devtest_result, args.evaltest_result, args.devtest_predictions, args.evaltest_predictions, args.model,
+    run(args.mode, args.task, args.train_data, args.dev_data, args.test_data, args.devtest_result, args.evaltest_result, args.devtest_predictions, args.evaltest_predictions, args.model,
         args.config)
 
 
