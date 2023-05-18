@@ -20,9 +20,12 @@ TEXT_COL = 'text'
 TRAIN_MODE = 'train'
 TEST_MODE = 'test'
 TRAIN_DATASET_NAME = 'train'
+TRAIN_DATASET_EN_PATH = '../data/train/en/hateval2019_en_train.csv'
 DEV_DATASET_NAME = 'dev'
 TEST_DATASET_NAME = 'test'
 CLASSIFICATION_ALGORITHM = 'SVM'
+PRIMARY_TASK_LANGUAGE = 'en'
+ADAPTATION_TASK_LANGUAGE = 'es'
 
 
 def eprint(*args, **kwargs):
@@ -62,6 +65,8 @@ def create_arg_parser():
     argument_parser = ArgumentParser(description='D3 for PlaceboAffect - Course Ling 573.')
     argument_parser.add_argument('--mode', type=str, choices=['train', 'test'], default='train',
                                  help='Train or test the model')
+    argument_parser.add_argument('--task', type=str, choices=['primary', 'adaptation'], default='primary',
+                                 help='Task to perform (primary or adaptation)')
     argument_parser.add_argument('--train-data', help='Training Data File Path',
                                  default='../data/train/en/hateval2019_en_train.csv')
     argument_parser.add_argument('--dev-data', help='Development Data File Path',
@@ -97,7 +102,8 @@ def evaluate(gold, pred):
     return acc_hs, p_hs, r_hs, f1_hs
 
 
-def run(mode, training_data_file, dev_data_file, test_data_file, result_file, predictions_file, model_file, config):
+def run(mode, task, training_data_file, dev_data_file, test_data_file, result_file, predictions_file, model_file,
+        config):
     """
     This is the main function that will be running the different steps for Affect Recognition System.
 
@@ -140,7 +146,14 @@ def run(mode, training_data_file, dev_data_file, test_data_file, result_file, pr
     result_file = result_file.format(sys='_' + config_name if config_name != 'baseline' else "")
 
     # Load Data from CSV and store as preprocess.Data object
-    data_train = preprocess.Data.from_csv(training_data_file, name=TRAIN_DATASET_NAME)
+    if task == 'primary':
+        data_train = preprocess.Data.from_csv(training_data_file, name=TRAIN_DATASET_NAME)
+    elif task == 'adaptation':
+        train_concat_df = pd.concat([pd.read_csv(training_data_file), pd.read_csv(TRAIN_DATASET_EN_PATH)])
+        data_train = preprocess.Data(raw_df=train_concat_df, name=TRAIN_DATASET_NAME)
+    else:
+        eprint(f'Invalid Option: {task}! - Only primary or adaptation are allowed.')
+
     data_dev = preprocess.Data.from_csv(dev_data_file, name=DEV_DATASET_NAME)
     data_test = preprocess.Data.from_csv(test_data_file, name=TEST_DATASET_NAME)
     print('Data Load Complete')
@@ -166,8 +179,8 @@ def run(mode, training_data_file, dev_data_file, test_data_file, result_file, pr
 
     if mode == TRAIN_MODE:
         # Train Model
-        parameter_grid = {'C': [0.1, 1, 10], 'kernel': ['linear', 'rbf', 'sigmoid']}
-        # parameter_grid = {"C": [0.1], "kernel": ["linear"]}
+        # parameter_grid = {'C': [0.1, 1, 10], 'kernel': ['linear', 'rbf', 'sigmoid']}
+        parameter_grid = {"C": [0.1], "kernel": ["linear"]}
         clf = classifier.Model(parameter_grid)
         clf.fit(train_vector.vector, data_train.label, tuning=(dev_vector.vector, data_dev.label),
                 algorithm=CLASSIFICATION_ALGORITHM)
@@ -212,7 +225,7 @@ def main():
     np.random.seed(5)
     random.seed(5)
     args = create_arg_parser().parse_args()
-    run(args.mode, args.train_data, args.dev_data, args.test_data, args.result, args.predictions, args.model,
+    run(args.mode, args.task, args.train_data, args.dev_data, args.test_data, args.result, args.predictions, args.model,
         args.config)
 
 
