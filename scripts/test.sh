@@ -1,5 +1,4 @@
 #!/bin/sh
-source ~/anaconda3/etc/profile.d/conda.sh
-conda activate PlaceboAffect
-
-python3 src/main.py --mode test --task primary --test-data $1 --result $2 --prediction $3 --model $4 --train-data $5 --config $6 --dev-data $7
+SCRIPT_PATH="$(realpath "$0")"
+SCRIPT_DIR="$(dirname "$SCRIPT_PATH")"
+"$SCRIPT_DIR/model_runner.sh" -m test -t primary -s "$1"
