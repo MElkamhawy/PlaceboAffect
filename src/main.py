@@ -103,26 +103,7 @@ def run(args):
     param args: instance of ParsedArgs
     return: Void
     """
-    # Validations
-    if args.mode is TRAIN_MODE and not os.path.exists(args.train_data_path):
-        eprint("Training data file does not exist!")
-        sys.exit(1)
-
-    if not os.path.exists(args.dev_data_path):
-        eprint("Dev data file does not exist!")
-        sys.exit(1)
-
-    if not os.path.exists(args.test_data_path):
-        eprint("Test data file does not exist!")
-        sys.exit(1)
-
-    if args.mode is TEST_MODE and not os.path.exists(args.model_path):
-        eprint("Model file does not exist!")
-        sys.exit(1)
-
-    if not os.path.exists(args.config_path):
-        eprint("Config file does not exist!")
-        sys.exit(1)
+    
     features_config = read_yaml_config(args.config_path)
     
     # Load Data from CSV and store as preprocess.Data object
