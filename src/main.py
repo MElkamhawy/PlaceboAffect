@@ -112,7 +112,7 @@ def run(args):
     data_dev.process(text_name=TEXT_COL, target_name=TARGET_LABEL_COL)
     data_test.process(text_name=TEXT_COL, target_name=TARGET_LABEL_COL)
     print('Data Preprocessing Complete')
-    print(data_train.text[:5])
+
     # Extract Features from Data
     train_vector = extract_features.Vector(name=TRAIN_DATASET_NAME, text=data_train.text, config=features_config)
     dev_vector = extract_features.Vector(name=DEV_DATASET_NAME, text=data_dev.text, config=features_config)
