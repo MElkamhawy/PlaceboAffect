@@ -19,7 +19,7 @@ def main():
         for model in all_models:
             for mode in all_modes:
                 args = format_args(mode, task, model)
-                command_parts = [sys.executable, f"{repo_dir}/src/main.py"] + args
+                command_parts = [f"{repo_dir}/scripts/model_runner.sh"] + args
                 print(f"\nCalling main.py with args: {args}")
                 subprocess.run(command_parts)
 
