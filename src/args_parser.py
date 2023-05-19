@@ -32,7 +32,7 @@ class ParsedArgs:
         lang = "en" if self.task == "primary" else "es"
 
         self.train_data_path = self._validate_path(
-            f"{data_dir}/train/{lang}/hateval2019_{lang}_train.csv", True
+            f"{data_dir}/train/{lang}/hateval2019_{lang}_train.csv", self.mode == "train"
         )
         self.dev_data_path = self._validate_path(
             f"{data_dir}/dev/{lang}/hateval2019_{lang}_dev.csv", True
