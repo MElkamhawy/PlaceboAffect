@@ -15,9 +15,9 @@ def format_args(mode, task, model):
 
 
 def main():
-    for mode in all_modes:
-        for task in all_tasks:
-            for model in all_models:
+    for task in all_tasks:
+        for model in all_models:
+            for mode in all_modes:
                 args = format_args(mode, task, model)
                 command_parts = [sys.executable, f"{repo_dir}/src/main.py"] + args
                 print(f"\nCalling main.py with args: {args}")

@@ -29,7 +29,7 @@ class ParsedArgs:
         return filename
 
     def _init_data_paths(self):
-        lang = "en" if self.task == "primary" else "es"
+        lang = "en" if self.task == "primary" else "es2en"
 
         self.train_data_path = self._validate_path(
             f"{data_dir}/train/{lang}/hateval2019_{lang}_train.csv", self.mode == "train"

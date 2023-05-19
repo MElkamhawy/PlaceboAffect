@@ -1,18 +1,13 @@
 #!/usr/bin/env python
-
-import os
 import random
 import sys
 import numpy as np
 import yaml
-
 import nltk
 from sklearn.metrics import accuracy_score, classification_report
 from sklearn.metrics import precision_recall_fscore_support
-
 from features import preprocess, extract_features
 from modeling import classifier
-
 from args_parser import parse_args
 
 TARGET_LABEL_COL = 'HS'
@@ -58,6 +53,7 @@ def output_lines(lines, path):
         for line in lines:
             f.write(str(line) + '\n')
 
+
 def evaluate(gold, pred):
     """
     Evaluate the performance of the model
@@ -66,7 +62,6 @@ def evaluate(gold, pred):
     :param pred: prediction labaels array (list)
     :return: accuracy, precision, recall, f1 (float)
     """
-
     # Check length files
     if len(pred) != len(gold):
         eprint('Prediction and gold data have different number of lines.')
@@ -78,6 +73,7 @@ def evaluate(gold, pred):
 
     return acc_hs, p_hs, r_hs, f1_hs
 
+
 def output_evaluation_results(gold_labels, pred_labels, result_file):
     acc_hs, p_hs, r_hs, f1_hs = evaluate(gold_labels, pred_labels)
     report = classification_report(gold_labels, pred_labels)
@@ -87,7 +83,6 @@ def output_evaluation_results(gold_labels, pred_labels, result_file):
     print(f'precision = {p_hs:.2f}')
     print(f'recall = {r_hs:.2f}')
     print(f'f1_macro = {f1_hs:.2f}\n')
-
     
     with open(result_file, 'w') as f:
         f.write(report)
@@ -96,6 +91,7 @@ def output_evaluation_results(gold_labels, pred_labels, result_file):
         f.write(f'\nrecall = {r_hs:.2f}')
         f.write(f'\nf1_macro = {f1_hs:.2f}')
 
+
 def run(args):
     """
     This is the main function that will be running the different steps for Affect Recognition System.
@@ -103,7 +99,6 @@ def run(args):
     param args: instance of ParsedArgs
     return: Void
     """
-    
     features_config = read_yaml_config(args.config_path)
     
     # Load Data from CSV and store as preprocess.Data object
@@ -117,9 +112,8 @@ def run(args):
     data_dev.process(text_name=TEXT_COL, target_name=TARGET_LABEL_COL)
     data_test.process(text_name=TEXT_COL, target_name=TARGET_LABEL_COL)
     print('Data Preprocessing Complete')
-
+    print(data_train.text[:5])
     # Extract Features from Data
-
     train_vector = extract_features.Vector(name=TRAIN_DATASET_NAME, text=data_train.text, config=features_config)
     dev_vector = extract_features.Vector(name=DEV_DATASET_NAME, text=data_dev.text, config=features_config)
     test_vector = extract_features.Vector(name=TEST_DATASET_NAME, text=data_test.text, config=features_config)
