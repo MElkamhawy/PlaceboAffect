@@ -1,19 +1,14 @@
 #!/usr/bin/env python
-
-import os
 import random
 import sys
-from argparse import ArgumentParser
 import numpy as np
-import pandas as pd
 import yaml
-
 import nltk
 from sklearn.metrics import accuracy_score, classification_report
 from sklearn.metrics import precision_recall_fscore_support
-
 from features import preprocess, extract_features
 from modeling import classifier
+from args_parser import parse_args
 
 TARGET_LABEL_COL = 'HS'
 TEXT_COL = 'text'
@@ -23,7 +18,8 @@ TRAIN_DATASET_NAME = 'train'
 DEV_DATASET_NAME = 'dev'
 TEST_DATASET_NAME = 'test'
 CLASSIFICATION_ALGORITHM = 'SVM'
-
+PRIMARY_TASK_LANGUAGE = 'en'
+ADAPTATION_TASK_LANGUAGE = 'es'
 
 def eprint(*args, **kwargs):
     """
@@ -58,24 +54,6 @@ def output_lines(lines, path):
             f.write(str(line) + '\n')
 
 
-def create_arg_parser():
-    argument_parser = ArgumentParser(description='D3 for PlaceboAffect - Course Ling 573.')
-    argument_parser.add_argument('--mode', type=str, choices=['train', 'test'], default='train',
-                                 help='Train or test the model')
-    argument_parser.add_argument('--train-data', help='Training Data File Path',
-                                 default='../data/train/en/hateval2019_en_train.csv')
-    argument_parser.add_argument('--dev-data', help='Development Data File Path',
-                                 default='../data/dev/en/hateval2019_en_dev.csv')
-    argument_parser.add_argument('--test-data', help='Test Data File Path',
-                                 default='../data/test/en/hateval2019_en_test.csv')
-    argument_parser.add_argument('--model', help='Model File Path', default='../models/D4/svm_{sys}.pkl')
-    argument_parser.add_argument('--config', help='Config File Path', default='configs/baseline.yaml')
-    argument_parser.add_argument('--result', help='Output File Path', default='../results/D4/D4_scores{sys}.out')
-    argument_parser.add_argument('--predictions', help='Predictions File Path',
-                                 default='../outputs/D4/pred_{sys}.txt')
-    return argument_parser
-
-
 def evaluate(gold, pred):
     """
     Evaluate the performance of the model
@@ -84,7 +62,6 @@ def evaluate(gold, pred):
     :param pred: prediction labaels array (list)
     :return: accuracy, precision, recall, f1 (float)
     """
-
     # Check length files
     if len(pred) != len(gold):
         eprint('Prediction and gold data have different number of lines.')
@@ -97,52 +74,37 @@ def evaluate(gold, pred):
     return acc_hs, p_hs, r_hs, f1_hs
 
 
-def run(mode, training_data_file, dev_data_file, test_data_file, result_file, predictions_file, model_file, config):
+def output_evaluation_results(gold_labels, pred_labels, result_file):
+    acc_hs, p_hs, r_hs, f1_hs = evaluate(gold_labels, pred_labels)
+    report = classification_report(gold_labels, pred_labels)
+    print(report)
+
+    print(f'accuracy = {acc_hs:.2f}')
+    print(f'precision = {p_hs:.2f}')
+    print(f'recall = {r_hs:.2f}')
+    print(f'f1_macro = {f1_hs:.2f}\n')
+    
+    with open(result_file, 'w') as f:
+        f.write(report)
+        f.write(f'\naccuracy = {acc_hs:.2f}')
+        f.write(f'\nprecision = {p_hs:.2f}')
+        f.write(f'\nrecall = {r_hs:.2f}')
+        f.write(f'\nf1_macro = {f1_hs:.2f}')
+
+
+def run(args):
     """
     This is the main function that will be running the different steps for Affect Recognition System.
-
-    param mode: train or test (str)
-    param training_data_file: path to training data file (str)
-    param dev_data_file: path to dev data file (str)
-    param test_data_file: path to test data file (str)
-    param result_file: path to result file (str)
-    param predictions_file: path to predictions file (str)
-    param model_file: path to model file (str)
-    param config: path to config file (str)
+    
+    param args: instance of ParsedArgs
     return: Void
     """
-    # Validations
-    if mode is TRAIN_MODE and not os.path.exists(training_data_file):
-        eprint("Training data file does not exist!")
-        sys.exit(1)
-
-    if not os.path.exists(dev_data_file):
-        eprint("Dev data file does not exist!")
-        sys.exit(1)
-
-    if not os.path.exists(test_data_file):
-        eprint("Test data file does not exist!")
-        sys.exit(1)
-
-    if mode is TEST_MODE and not os.path.exists(model_file):
-        eprint("Model file does not exist!")
-        sys.exit(1)
-
-    if not os.path.exists(config):
-        eprint("Config file does not exist!")
-        sys.exit(1)
-    features_config = read_yaml_config(config)
-
-    # Adjust File Paths
-    config_name = os.path.basename(config).split('.')[0]
-    model_file = model_file.format(sys=config_name)
-    predictions_file = predictions_file.format(sys=config_name)
-    result_file = result_file.format(sys='_' + config_name if config_name != 'baseline' else "")
-
+    features_config = read_yaml_config(args.config_path)
+    
     # Load Data from CSV and store as preprocess.Data object
-    data_train = preprocess.Data.from_csv(training_data_file, name=TRAIN_DATASET_NAME)
-    data_dev = preprocess.Data.from_csv(dev_data_file, name=DEV_DATASET_NAME)
-    data_test = preprocess.Data.from_csv(test_data_file, name=TEST_DATASET_NAME)
+    data_train = preprocess.Data.from_csv(args.train_data_path, name=TRAIN_DATASET_NAME)
+    data_dev = preprocess.Data.from_csv(args.dev_data_path, name=DEV_DATASET_NAME)
+    data_test = preprocess.Data.from_csv(args.test_data_path, name=TEST_DATASET_NAME)
     print('Data Load Complete')
 
     # Preprocess Data
@@ -152,7 +114,6 @@ def run(mode, training_data_file, dev_data_file, test_data_file, result_file, pr
     print('Data Preprocessing Complete')
 
     # Extract Features from Data
-
     train_vector = extract_features.Vector(name=TRAIN_DATASET_NAME, text=data_train.text, config=features_config)
     dev_vector = extract_features.Vector(name=DEV_DATASET_NAME, text=data_dev.text, config=features_config)
     test_vector = extract_features.Vector(name=TEST_DATASET_NAME, text=data_test.text, config=features_config)
@@ -164,7 +125,7 @@ def run(mode, training_data_file, dev_data_file, test_data_file, result_file, pr
     clf = None
     print('Feature Extraction Complete')
 
-    if mode == TRAIN_MODE:
+    if args.mode == TRAIN_MODE:
         # Train Model
         parameter_grid = {'C': [0.1, 1, 10], 'kernel': ['linear', 'rbf', 'sigmoid']}
         # parameter_grid = {"C": [0.1], "kernel": ["linear"]}
@@ -173,47 +134,42 @@ def run(mode, training_data_file, dev_data_file, test_data_file, result_file, pr
                 algorithm=CLASSIFICATION_ALGORITHM)
 
         # Save Model
-        clf.save_model(model_file)
-    elif mode == TEST_MODE:
-        clf = classifier.Model.from_file(model_file)
+        clf.save_model(args.model_path)
+    elif args.mode == TEST_MODE:
+        clf = classifier.Model.from_file(args.model_path)
     else:
-        eprint(f'Invalid Option: {mode}! - Only Train or Test are allowed.')
+        eprint(f'Invalid Option: {args.mode}! - Only Train or Test are allowed.')
 
     print('Model Training Complete')
 
     # Predict on Test Set
-    pred_labels = clf.predict(test_vector.vector)
+    dev_pred_labels = clf.predict(dev_vector.vector)
+    test_pred_labels = clf.predict(test_vector.vector)
 
     # Output Predictions
-    pred_df = data_test.raw_df[['id']].copy()
-    pred_df['pred'] = pred_labels
-    pred_df.to_csv(predictions_file, sep='\t', header=False, index=False)
-
+    dev_pred_df = data_dev.raw_df[['id']].copy()
+    test_pred_df = data_test.raw_df[['id']].copy()
+    
+    dev_pred_df['pred'] = dev_pred_labels
+    test_pred_df['pred'] = test_pred_labels
+    
+    dev_pred_df.to_csv(args.devtest_predictions_path, sep='\t', header=False, index=False)
+    test_pred_df.to_csv(args.evaltest_predictions_path, sep='\t', header=False, index=False)
+    
     # Evaluate classifier
-    acc_hs, p_hs, r_hs, f1_hs = evaluate(data_test.label, pred_labels)
-    report = classification_report(data_test.label, pred_labels)
-    print(report)
-
-    print(f'accuracy = {acc_hs:.2f}')
-    print(f'precision = {p_hs:.2f}')
-    print(f'recall = {r_hs:.2f}')
-    print(f'f1_macro = {f1_hs:.2f}')
-
-    with open(result_file, 'w') as f:
-        f.write(report)
-        f.write(f'\naccuracy = {acc_hs:.2f}')
-        f.write(f'\nprecision = {p_hs:.2f}')
-        f.write(f'\nrecall = {r_hs:.2f}')
-        f.write(f'\nf1_macro = {f1_hs:.2f}')
+    print("Devtest Results:")
+    output_evaluation_results(data_dev.label, dev_pred_labels, args.devtest_result_path)
+    
+    print("Evaltest Results:")
+    output_evaluation_results(data_test.label, test_pred_labels, args.evaltest_result_path)
 
 
 def main():
     nltk.data.path.append("/corpora/nltk/nltk-data")
     np.random.seed(5)
     random.seed(5)
-    args = create_arg_parser().parse_args()
-    run(args.mode, args.train_data, args.dev_data, args.test_data, args.result, args.predictions, args.model,
-        args.config)
+    args = parse_args()
+    run(args)
 
 
 if __name__ == '__main__':
