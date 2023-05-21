@@ -1,5 +1,5 @@
 universe            = vanilla
-executable          = scripts/test.sh
+executable          = scripts/test_adapt.sh
 getenv              = true
 error               = error.err
 log                 = logs.log
