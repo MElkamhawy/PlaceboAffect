@@ -5,7 +5,6 @@ from nltk.tokenize import TweetTokenizer
 from sklearn.feature_extraction.text import CountVectorizer
 from textblob import TextBlob
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
-from sklearn.preprocessing import StandardScaler
 
 lexicon = Empath()
 BOW_FEATURE = "bag_of_words"
