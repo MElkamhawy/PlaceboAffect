@@ -2,6 +2,7 @@
 import random
 import sys
 import numpy as np
+import pandas as pd
 import yaml
 import nltk
 from sklearn.metrics import accuracy_score, classification_report
@@ -20,6 +21,8 @@ TEST_DATASET_NAME = 'test'
 CLASSIFICATION_ALGORITHM = 'SVM'
 PRIMARY_TASK_LANGUAGE = 'en'
 ADAPTATION_TASK_LANGUAGE = 'es'
+TRAIN_DATASET_EN_PATH = "../data/train/en/hateval2019_en_train.csv"
+
 
 def eprint(*args, **kwargs):
     """
@@ -83,7 +86,7 @@ def output_evaluation_results(gold_labels, pred_labels, result_file):
     print(f'precision = {p_hs:.2f}')
     print(f'recall = {r_hs:.2f}')
     print(f'f1_macro = {f1_hs:.2f}\n')
-    
+
     with open(result_file, 'w') as f:
         f.write(report)
         f.write(f'\naccuracy = {acc_hs:.2f}')
@@ -95,14 +98,21 @@ def output_evaluation_results(gold_labels, pred_labels, result_file):
 def run(args):
     """
     This is the main function that will be running the different steps for Affect Recognition System.
-    
+
     param args: instance of ParsedArgs
     return: Void
     """
     features_config = read_yaml_config(args.config_path)
-    
+
     # Load Data from CSV and store as preprocess.Data object
-    data_train = preprocess.Data.from_csv(args.train_data_path, name=TRAIN_DATASET_NAME)
+    if args.task == 'primary':
+        data_train = preprocess.Data.from_csv(args.train_data_path, name=TRAIN_DATASET_NAME)
+    elif args.task == 'adaptation':
+        train_concat_df = pd.concat([pd.read_csv(args.train_data_path), pd.read_csv(TRAIN_DATASET_EN_PATH)])
+        data_train = preprocess.Data(raw_df=train_concat_df, name=TRAIN_DATASET_NAME)
+    else:
+        eprint(f'Invalid Option: {ars.task}! - Only primary or adaptation are allowed.')
+
     data_dev = preprocess.Data.from_csv(args.dev_data_path, name=DEV_DATASET_NAME)
     data_test = preprocess.Data.from_csv(args.test_data_path, name=TEST_DATASET_NAME)
     print('Data Load Complete')
@@ -149,17 +159,17 @@ def run(args):
     # Output Predictions
     dev_pred_df = data_dev.raw_df[['id']].copy()
     test_pred_df = data_test.raw_df[['id']].copy()
-    
+
     dev_pred_df['pred'] = dev_pred_labels
     test_pred_df['pred'] = test_pred_labels
-    
+
     dev_pred_df.to_csv(args.devtest_predictions_path, sep='\t', header=False, index=False)
     test_pred_df.to_csv(args.evaltest_predictions_path, sep='\t', header=False, index=False)
-    
+
     # Evaluate classifier
     print("Devtest Results:")
     output_evaluation_results(data_dev.label, dev_pred_labels, args.devtest_result_path)
-    
+
     print("Evaltest Results:")
     output_evaluation_results(data_test.label, test_pred_labels, args.evaltest_result_path)
 
