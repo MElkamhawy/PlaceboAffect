@@ -251,7 +251,7 @@ Distributed under the Apache License 2.0. See [LICENSE](./LICENSE) for more info
   - Email: mohame@uw.edu
 - Karl Haraldsson
   - Email: kharalds@uw.edu
-- Alex Marix
+- Alex Maris
   - Email: alexmar@uw.edu
 - Nora Miao
   - Email: norah98@uw.edu
