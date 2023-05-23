@@ -1,5 +1,4 @@
 from os import path
-import sys
 import subprocess
 
 scripts_dir = path.dirname(__file__)
@@ -7,7 +6,7 @@ repo_dir = path.abspath(f"{scripts_dir}/../")
 
 all_modes = ["train", "test"]
 all_tasks = ["primary", "adaptation"]
-all_models = ["baseline", "alpha", "beta", "delta", "gamma"]
+all_models = ["baseline", "alpha", "beta", "gamma", "delta"]
 
 
 def format_args(mode, task, model):
