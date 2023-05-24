@@ -15,7 +15,7 @@ This repo is used for our team PlaceboAffect for LING 573 Course at UW Seattle.
 
 ## Project Overview
 
-We have developed an affect recognition system for SemEval-2019 Task 5, focusing on identifying hate speech in both English and Spanish tweets targeting immigrants and women. It employs a binary classification approach using a Word2Vec model for word embeddings and a Support Vector Machine (SVM) algorithm. To enhance the system's performance, we have incorporated additional lexical features such as n-grams and sentiment scores.For the Spanish tweets, we have employed a translation-based approach and integrated it into our existing pipeline.
+We have developed an affect recognition system for SemEval-2019 Task 5, focusing on identifying hate speech in both English and Spanish tweets targeting immigrants and women. It employs a binary classification approach using a Word2Vec model for word embeddings and a Support Vector Machine (SVM) algorithm. To enhance the system's performance, we have incorporated additional lexical features such as n-grams and sentiment scores. For the Spanish tweets, we have employed a translation-based approach and integrated it into our existing pipeline.
 
 ## Folder Structure
 
@@ -164,16 +164,16 @@ The project consists of the following components:
   These three parameters are required for the system to function properly. Make sure to provide them when executing the script. Example usage: `./scripts/model_runner.sh -m train -t primary -s baseline`.
   Please adjust the parameters as needed for your specific use case.
 
-- `scripts/train.sh`, `scripts/train_alpha.sh`, `scripts/train_beta.sh`, `scripts/train_gamma.sh`, `scripts/train_delta`: These scripts are used to train the baseline, alpha, beta, gamma, and delta models, respectively, for the primary task. They do not require any additional parameters. Example usage:
+- `scripts/train.sh`: This script is used to train the specified model for the primary task. It only takes the model name as input. Example usage:
 
   ```bash
-  ./scripts/train.sh
+  ./scripts/train.sh baseline
   ```
 
-- `scripts/train_adapt.sh`, `scripts/train_adapt_alpha.sh`, `scripts/train_adapt_beta.sh`, `scripts/train_adapt_gamma.sh`, `scripts/train_adapt_delta`: These scripts are used to train the baseline, alpha, beta, gamma, and delta models, respectively, for the adaptation task. They do not require any additional parameters. Example usage:
+- `scripts/train_adapt.sh`: This script is used to train the specified model for the adaptation task. It only takes the model name as input. Example usage:
 
   ```bash
-  ./scripts/train_adapt.sh
+  ./scripts/train_adapt.sh baseline
   ```
 
 - `scripts/test.sh`: This script is used to test the specified model for the primary task. It only takes the model name as input. Example usage:
@@ -194,7 +194,7 @@ The project consists of the following components:
   python ./scripts/run_all.py
   ```
 
-- `D4.cmd`: This script is specifically designed to perform inference using the best model for the adaptation task. Before running the D4.cmd script, ensure that the best model for the adaptation task is available and properly trained. Please note that the D4.cmd script assumes that all the required configurations and dependencies are in place for the successful execution of the inference process. To run the d4.cmd script, use the following command on patas:
+- `D4.cmd`: This script is specifically designed to perform inference using the best model for the adaptation task. Before running the D4.cmd script, ensure that the best model for the adaptation task is available and properly trained. Please note that the D4.cmd script assumes that all the required configurations and dependencies are in place for the successful execution of the inference process. To run the D4.cmd script, use the following command on patas:
   ```bash
   condor_submit D4.cmd
   ```

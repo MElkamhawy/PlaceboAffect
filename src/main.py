@@ -19,9 +19,6 @@ TRAIN_DATASET_NAME = 'train'
 DEV_DATASET_NAME = 'dev'
 TEST_DATASET_NAME = 'test'
 CLASSIFICATION_ALGORITHM = 'SVM'
-PRIMARY_TASK_LANGUAGE = 'en'
-ADAPTATION_TASK_LANGUAGE = 'es'
-TRAIN_DATASET_EN_PATH = "../data/train/en/hateval2019_en_train.csv"
 
 
 def eprint(*args, **kwargs):
@@ -108,10 +105,10 @@ def run(args):
     if args.task == 'primary':
         data_train = preprocess.Data.from_csv(args.train_data_path, name=TRAIN_DATASET_NAME)
     elif args.task == 'adaptation':
-        train_concat_df = pd.concat([pd.read_csv(args.train_data_path), pd.read_csv(TRAIN_DATASET_EN_PATH)])
+        train_concat_df = pd.concat([pd.read_csv(args.train_data_path), pd.read_csv(args.train_en_data_path)])
         data_train = preprocess.Data(raw_df=train_concat_df, name=TRAIN_DATASET_NAME)
     else:
-        eprint(f'Invalid Option: {ars.task}! - Only primary or adaptation are allowed.')
+        eprint(f'Invalid Option: {args.task}! - Only primary or adaptation are allowed.')
 
     data_dev = preprocess.Data.from_csv(args.dev_data_path, name=DEV_DATASET_NAME)
     data_test = preprocess.Data.from_csv(args.test_data_path, name=TEST_DATASET_NAME)

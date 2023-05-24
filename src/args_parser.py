@@ -53,8 +53,14 @@ class ParsedArgs:
         Initializes the file paths for the data files based on the task.
         Sets the train_data_path, dev_data_path, and test_data_path attributes.
         """
-        lang = "en" if self.task == "primary" else "es2en"
-
+        if self.task == "primary":
+            lang = "en"
+        else:
+            lang = "es2en"
+            self.train_en_data_path = self._validate_path(
+                f"{data_dir}/train/en/hateval2019_en_train.csv",
+                self.mode == "train",
+            )
         self.train_data_path = self._validate_path(
             f"{data_dir}/train/{lang}/hateval2019_{lang}_train.csv",
             self.mode == "train",
@@ -104,8 +110,9 @@ class ParsedArgs:
         Initializes the file paths for the model and configuration files based on the model.
         Sets the model_path and config_path attributes.
         """
+        model_dir = f"{models_dir}/{self.task}"
         self.model_path = self._validate_path(
-            f"{repo_dir}/models/D4/{self.model}.pkl", self.mode == "test"
+            f"{model_dir}/{self.model}.pkl", self.mode == "test"
         )
         self.config_path = self._validate_path(
             f"{repo_dir}/src/configs/{self.model}.yaml", True
